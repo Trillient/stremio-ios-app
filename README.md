@@ -1,9 +1,10 @@
 # Stremio iOS App (unofficial)
 
 A native iPhone/iPad app for [Stremio](https://www.stremio.com), built around the **real Stremio
-web app** with a **VLC player** underneath — so streams that Safari can't play (MKV, x265/HEVC,
-AC3/EAC3/DTS, multi-audio) just work. Because it's the official web UI, it stays current whenever
-Stremio ships updates; only playback is native.
+web app** with a **VLC player** underneath — so streams Safari can't play (MKV, x265/HEVC,
+AC3/EAC3/DTS, multi-audio) just work. It can also run Stremio's **streaming server on the device
+itself**, so torrents play with no home server and no debrid. Because it's the official web UI, it
+stays current whenever Stremio ships updates; only the server + playback are native.
 
 > Unofficial. Not affiliated with or endorsed by Stremio. Bring your own streams/addons.
 
@@ -23,7 +24,8 @@ Stremio ships updates; only playback is native.
 ## How it works
 
 ```
-Stremio web app (WKWebView)
+Built-in mode:  Stremio web app (served from 127.0.0.1 by the app) → in-app server.js → VLC
+Own-server mode:
    └─ Play → injected JS grabs the raw file URL from the /hlsv2 request and cancels the transcode
         └─ loopback proxy (127.0.0.1) forwards to your server with your cookie, relays Range/206
              └─ MobileVLCKit decodes natively → full-screen player
@@ -34,16 +36,15 @@ adds them. Streams from direct-link addons (debrid, HTTP) go straight to VLC.
 
 ## Setup
 
-On first launch the app asks where to connect: **your own Stremio instance** (enter its URL —
-torrents play via its bundled streaming server) or the **official web.stremio.com** (torrents
-need a debrid addon or a streaming server URL set in Stremio's settings). Change it any time in
-iOS Settings → Stremio, or flip "Show setup on next launch".
+On first launch, pick one:
 
-1. **Streaming server.** Torrent playback needs a Stremio streaming server. Point the web app at
-   yours: Stremio → Settings → *Streaming server URL* (e.g. `http://your-server:11470` or an
-   `https://` reverse-proxied URL). Direct-link addons work without one.
-2. **Web URL (optional).** iOS Settings → **Stremio** → *Web URL* to use a self-hosted instance
-   instead of `web.stremio.com`. Relaunch after changing.
+- **Built-in streaming (recommended)** — the app runs Stremio's streaming server on your phone
+  (via `nodejs-mobile`, downloaded once ~7 MB). Torrents play on-device; nothing to host. Costs
+  battery/data while watching, and downloads pause when the app is backgrounded (iOS limit).
+- **My own Stremio server** — point it at an instance you already run; it fetches torrents, saving
+  your phone's battery and data. Cookie-based SSO in front of it is supported.
+
+Change it any time in iOS Settings → Stremio, or flip "Show setup on next launch".
 
 ## Build & install
 

@@ -1,14 +1,18 @@
 import Foundation
 import Network
 
-/// Loopback HTTP proxy for native playback.
+/// Loopback HTTP proxy on 127.0.0.1 with two jobs:
 ///
-/// libvlc in this build cannot be made to send the site's SSO cookie, so VLC
-/// fetches from 127.0.0.1 instead and we forward each request to the origin
-/// with the cookie attached, relaying status, Range/206 and the body so seeking
-/// works exactly as it would against the origin.
+/// 1. **Streams** — VLC can't send the site's SSO cookie, so it fetches from
+///    localhost and we forward to the origin with the cookie, relaying Range/206.
+/// 2. **Web mirror (built-in mode)** — Stremio's web app is served from
+///    `http://127.0.0.1:<port>/` by mirroring web.stremio.com. WebKit blocks an
+///    https page from calling the in-app server at http://127.0.0.1:11470
+///    (mixed content); from a localhost origin that call is allowed, and
+///    localhost still counts as a secure context.
 final class StreamProxy {
     static let shared = StreamProxy()
+    static let mirrorOrigin = URL(string: "https://web.stremio.com")!
 
     private struct Route { let origin: URL; let cookie: String? }
     private var routes: [String: Route] = [:]
@@ -16,6 +20,12 @@ final class StreamProxy {
     private(set) var port: UInt16 = 0
     private let queue = DispatchQueue(label: "dev.woolston.stremio.proxy")
     private let lock = NSLock()
+
+    /// Base URL of the mirrored Stremio web app.
+    var mirrorBaseURL: URL {
+        startIfNeeded()
+        return URL(string: "http://127.0.0.1:\(port)/")!
+    }
 
     /// Returns the loopback URL VLC should open for `origin`.
     func register(origin: URL, cookie: String?) -> URL {
@@ -35,12 +45,8 @@ final class StreamProxy {
         let ready = DispatchSemaphore(value: 0)
         l.stateUpdateHandler = { [weak self] state in
             switch state {
-            case .ready:
-                self?.port = l.port?.rawValue ?? 0
-                ready.signal()
-            case .failed(let err):
-                NSLog("[STREMIOAPP][proxy] listener failed: %@", err.localizedDescription)
-                ready.signal()
+            case .ready: self?.port = l.port?.rawValue ?? 0; ready.signal()
+            case .failed(let err): NSLog("[STREMIOAPP][proxy] listener failed: %@", err.localizedDescription); ready.signal()
             default: break
             }
         }
@@ -76,33 +82,43 @@ final class StreamProxy {
         let parts = lines.first?.split(separator: " ") ?? []
         guard parts.count >= 2 else { conn.cancel(); return }
         let method = String(parts[0])
-        let token = String(parts[1]).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let target = String(parts[1])                                   // path + query
+        let firstComponent = target.split(separator: "/", omittingEmptySubsequences: true).first.map(String.init) ?? ""
+        let token = firstComponent.split(separator: "?").first.map(String.init) ?? ""
 
-        lock.lock(); let route = routes[token]; lock.unlock()
-        guard let route else {
-            conn.send(content: Data("HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\n\r\n".utf8),
-                      completion: .contentProcessed { _ in conn.cancel() })
-            return
-        }
-
-        var req = URLRequest(url: route.origin)
-        req.httpMethod = (method == "HEAD") ? "HEAD" : "GET"
+        var headers: [String: String] = [:]
         for line in lines.dropFirst() {
             guard let colon = line.firstIndex(of: ":") else { continue }
-            let key = line[..<colon].trimmingCharacters(in: .whitespaces).lowercased()
-            let value = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
-            if key == "range" { req.setValue(value, forHTTPHeaderField: "Range") }
+            headers[line[..<colon].trimmingCharacters(in: .whitespaces).lowercased()] =
+                line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
         }
-        if let cookie = route.cookie { req.setValue(cookie, forHTTPHeaderField: "Cookie") }
-        req.setValue("StremioApp/1.0", forHTTPHeaderField: "User-Agent")
-        NSLog("[STREMIOAPP][proxy] %@ range=%@", method, req.value(forHTTPHeaderField: "Range") ?? "-")
 
-        let config = URLSessionConfiguration.ephemeral
-        config.httpShouldSetCookies = false
-        config.httpCookieAcceptPolicy = .never
-        config.timeoutIntervalForRequest = 90
-        config.timeoutIntervalForResource = 24 * 3600
-        let relay = Relay(conn: conn, request: req, config: config)
+        lock.lock(); let route = routes[token]; lock.unlock()
+
+        let req: URLRequest
+        let relay: Relay
+        if let route {
+            // Stream relay (cookie-authenticated, retry on cold torrent).
+            var r = URLRequest(url: route.origin)
+            r.httpMethod = (method == "HEAD") ? "HEAD" : "GET"
+            if let range = headers["range"] { r.setValue(range, forHTTPHeaderField: "Range") }
+            if let cookie = route.cookie { r.setValue(cookie, forHTTPHeaderField: "Cookie") }
+            r.setValue("StremioApp/1.0", forHTTPHeaderField: "User-Agent")
+            NSLog("[STREMIOAPP][proxy] %@ range=%@", method, headers["range"] ?? "-")
+            req = r
+            relay = Relay(conn: conn, request: r, followRedirects: false, maxAttempts: 45)
+        } else {
+            // Web mirror: same path/query on web.stremio.com.
+            guard let url = URL(string: target, relativeTo: Self.mirrorOrigin)?.absoluteURL else { conn.cancel(); return }
+            var r = URLRequest(url: url)
+            r.httpMethod = (method == "HEAD") ? "HEAD" : "GET"
+            for key in ["accept", "accept-language", "range", "if-none-match", "if-modified-since", "user-agent"] {
+                if let v = headers[key] { r.setValue(v, forHTTPHeaderField: key) }
+            }
+            req = r
+            relay = Relay(conn: conn, request: r, followRedirects: true, maxAttempts: 1)
+        }
+        _ = req
         relay.start()
     }
 }
@@ -110,15 +126,15 @@ final class StreamProxy {
 /// Streams one origin response back over one client connection.
 ///
 /// Cold torrents: the streaming server can't answer until it has the first
-/// pieces, and the edge returns 504 meanwhile. Rather than surfacing that to
-/// VLC (which gives up after 3 tries), hold the client connection and keep
-/// re-asking the origin until it produces data — so a slow start looks like
-/// buffering, not a dead stream. Simple backpressure suspends the origin task
-/// when VLC falls behind.
+/// pieces and the edge returns 504 meanwhile. Rather than surfacing that to VLC
+/// (which gives up after 3 tries), hold the client connection and keep re-asking
+/// the origin until it produces data. Simple backpressure suspends the origin
+/// task when the client falls behind.
 private final class Relay: NSObject, URLSessionDataDelegate {
     private let conn: NWConnection
     private let request: URLRequest
-    private let session: URLSession
+    private let followRedirects: Bool
+    private let maxAttempts: Int
     private var task: URLSessionDataTask?
 
     private let lock = NSLock()
@@ -127,21 +143,25 @@ private final class Relay: NSObject, URLSessionDataDelegate {
     private var headWritten = false
     private var retrying = false
     private var attempts = 0
-    private let maxAttempts = 45          // ~2.5 min at 3 s spacing
     private let retryDelay: TimeInterval = 3
 
-    init(conn: NWConnection, request: URLRequest, config: URLSessionConfiguration) {
+    init(conn: NWConnection, request: URLRequest, followRedirects: Bool, maxAttempts: Int) {
         self.conn = conn
         self.request = request
-        self.session = URLSession(configuration: config, delegate: nil, delegateQueue: nil)
+        self.followRedirects = followRedirects
+        self.maxAttempts = maxAttempts
         super.init()
     }
 
     func start() {
         attempts += 1
-        // A fresh session per attempt keeps delegate callbacks unambiguous.
-        let s = URLSession(configuration: session.configuration, delegate: self, delegateQueue: nil)
-        task = s.dataTask(with: request)
+        let config = URLSessionConfiguration.ephemeral
+        config.httpShouldSetCookies = false
+        config.httpCookieAcceptPolicy = .never
+        config.timeoutIntervalForRequest = 90
+        config.timeoutIntervalForResource = 24 * 3600
+        let session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
+        task = session.dataTask(with: request)
         task?.resume()
     }
 
@@ -163,6 +183,7 @@ private final class Relay: NSObject, URLSessionDataDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask,
                     willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest,
                     completionHandler: @escaping (URLRequest?) -> Void) {
+        if followRedirects { completionHandler(request); return }
         NSLog("[STREMIOAPP][proxy] origin redirected %d -> %@", response.statusCode, request.url?.absoluteString ?? "")
         completionHandler(nil)   // a login bounce is a failure we want to see, not follow
     }
@@ -178,19 +199,26 @@ private final class Relay: NSObject, URLSessionDataDelegate {
         }
 
         let reason: String
-        switch http.statusCode { case 200: reason = "OK"; case 206: reason = "Partial Content"; default: reason = "Status" }
+        switch http.statusCode {
+        case 200: reason = "OK"; case 206: reason = "Partial Content"; case 304: reason = "Not Modified"
+        case 404: reason = "Not Found"; default: reason = "Status"
+        }
         var head = "HTTP/1.1 \(http.statusCode) \(reason)\r\n"
-        let passthrough: Set<String> = ["content-type", "content-length", "content-range", "accept-ranges", "last-modified", "etag"]
+        // URLSession already decompressed the body, so a Content-Length from an
+        // encoded response would be wrong; let EOF (Connection: close) delimit it.
+        let encoded = http.value(forHTTPHeaderField: "Content-Encoding") != nil
+        let passthrough: Set<String> = ["content-type", "content-range", "accept-ranges", "last-modified", "etag", "cache-control"]
         for (k, v) in http.allHeaderFields {
-            let key = "\(k)"
-            if passthrough.contains(key.lowercased()) { head += "\(key): \(v)\r\n" }
+            let key = "\(k)"; let lk = key.lowercased()
+            if passthrough.contains(lk) || (lk == "content-length" && !encoded) { head += "\(key): \(v)\r\n" }
         }
         head += "Connection: close\r\n\r\n"
-        NSLog("[STREMIOAPP][proxy] origin %d type=%@ range=%@ len=%@ (attempt %d)",
-              http.statusCode,
-              http.value(forHTTPHeaderField: "Content-Type") ?? "-",
-              http.value(forHTTPHeaderField: "Content-Range") ?? "-",
-              http.value(forHTTPHeaderField: "Content-Length") ?? "-", attempts)
+        if !followRedirects {
+            NSLog("[STREMIOAPP][proxy] origin %d type=%@ range=%@ len=%@ (attempt %d)",
+                  http.statusCode, http.value(forHTTPHeaderField: "Content-Type") ?? "-",
+                  http.value(forHTTPHeaderField: "Content-Range") ?? "-",
+                  http.value(forHTTPHeaderField: "Content-Length") ?? "-", attempts)
+        }
         headWritten = true
         conn.send(content: Data(head.utf8), completion: .contentProcessed { _ in })
         completionHandler(.allow)
@@ -213,16 +241,12 @@ private final class Relay: NSObject, URLSessionDataDelegate {
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         defer { session.finishTasksAndInvalidate() }
-        if retrying { return }                          // we cancelled it ourselves; retry is scheduled
+        if retrying { return }
         if !headWritten {
-            if let error, attempts < maxAttempts {      // timeout / transport hiccup before any data
-                scheduleRetry(reason: error.localizedDescription)
-                return
-            }
-            fail(504, "Stream did not start")
+            if let error, attempts < maxAttempts { scheduleRetry(reason: error.localizedDescription); return }
+            fail(502, error == nil ? "Stream did not start" : "Upstream error")
             return
         }
-        if let error { NSLog("[STREMIOAPP][proxy] origin ended: %@", error.localizedDescription) }
         conn.send(content: nil, contentContext: .finalMessage, isComplete: true,
                   completion: .contentProcessed { [conn] _ in conn.cancel() })
     }

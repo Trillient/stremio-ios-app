@@ -168,6 +168,19 @@ private let interceptScript = """
 })();
 """
 
+private let pinLocalServerScript = """
+(function () {
+  try {
+    var U = 'http://127.0.0.1:11470/';
+    var raw = localStorage.getItem('profile');
+    if (raw) {
+      var p = JSON.parse(raw); p.settings = p.settings || {};
+      if (p.settings.streamingServerUrl !== U) { p.settings.streamingServerUrl = U; localStorage.setItem('profile', JSON.stringify(p)); }
+    }
+  } catch (e) {}
+})();
+"""
+
 struct WebView: UIViewRepresentable {
     @ObservedObject var model: WebViewModel
 
@@ -186,6 +199,13 @@ struct WebView: UIViewRepresentable {
                                       injectionTime: .atDocumentStart,
                                       forMainFrameOnly: false)
         config.userContentController.addUserScript(userScript)
+        if AppSettings.mode == .builtIn {
+            // Pin Stremio Web's streaming server to the in-app one, even if the
+            // account has a different server URL synced into its settings.
+            config.userContentController.addUserScript(WKUserScript(source: pinLocalServerScript,
+                                                                    injectionTime: .atDocumentStart,
+                                                                    forMainFrameOnly: true))
+        }
         // Weak proxy: userContentController retains the handler strongly, and the
         // coordinator retains the web view — a direct add() would leak both.
         config.userContentController.add(WeakScriptHandler(context.coordinator), name: "vlc")

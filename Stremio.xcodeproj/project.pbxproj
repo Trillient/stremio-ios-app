@@ -8,15 +8,18 @@
 
 /* Begin PBXBuildFile section */
 		10EA4D814E4BD3A67BDB9B0B /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 454004111D3A9A550087EBF4 /* CoreGraphics.framework */; };
+		1F07D03915B193722D09E6C5 /* NodeServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B081B2FC6C22588C3929EC6 /* NodeServer.swift */; };
 		23FF1D39DE3DF63220A18226 /* MobileVLCKit.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2BACA929A18F6E6ACBD0261C /* MobileVLCKit.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		251C442D800F0296426CF195 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5A3A31A797E882D50AF1C0F /* AudioToolbox.framework */; };
 		335853AD4557BAEEAB340554 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8EF09181A1FDEC2A7B0FBEA /* CFNetwork.framework */; };
 		374B1B22DAB016469486F92D /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 458B78D00A52C54DEBC59300 /* Security.framework */; };
 		457BC5B2967B103829B16632 /* CoreText.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FA81F3C8296E9EB1AD424ED /* CoreText.framework */; };
 		4AC14CD745822E24CC128BA2 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF33265341F48C3B5D3058B2 /* CoreMedia.framework */; };
+		5A125A0431C04681CC686505 /* NodeMobile.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0727DD6A40AD7C1624366E6 /* NodeMobile.xcframework */; };
 		5E8D0311044B1A984389C438 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 36C8B9B03A3517833CD7D889 /* Assets.xcassets */; };
 		5FD11BB4046D02B9A82B39BE /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 79FABE35DEDDB64E23A7A7C1 /* libiconv.tbd */; };
 		616FC9A0F0ACAEE7A6C76392 /* libbz2.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 179BD332B3C98A2F490FE479 /* libbz2.tbd */; };
+		6725616B0CEF345E923140EB /* NodeMobile.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A0727DD6A40AD7C1624366E6 /* NodeMobile.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6DC108E4BFB5C5E79FA47B1D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7CEEDD36F3B6D9682B7AFF /* ContentView.swift */; };
 		715B12808AEFB7A4D8E0E1CF /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 49F83A1086332772062EE2C1 /* Settings.bundle */; };
 		824A0D666D0A1CDAF17B5C1A /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 45CE31144294F32A128B9CB5 /* CoreAudio.framework */; };
@@ -45,6 +48,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				23FF1D39DE3DF63220A18226 /* MobileVLCKit.xcframework in Embed Frameworks */,
+				6725616B0CEF345E923140EB /* NodeMobile.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -62,6 +66,7 @@
 		2BACA929A18F6E6ACBD0261C /* MobileVLCKit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = MobileVLCKit.xcframework; path = Frameworks/MobileVLCKit.xcframework; sourceTree = "<group>"; };
 		311BDD6134C9EB1EE7A0BC57 /* libxml2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libxml2.tbd; path = usr/lib/libxml2.tbd; sourceTree = SDKROOT; };
 		36C8B9B03A3517833CD7D889 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		3B081B2FC6C22588C3929EC6 /* NodeServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeServer.swift; sourceTree = "<group>"; };
 		454004111D3A9A550087EBF4 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		458B78D00A52C54DEBC59300 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		45CE31144294F32A128B9CB5 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
@@ -73,6 +78,8 @@
 		79FABE35DEDDB64E23A7A7C1 /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
 		9FA81F3C8296E9EB1AD424ED /* CoreText.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreText.framework; path = System/Library/Frameworks/CoreText.framework; sourceTree = SDKROOT; };
 		A072293CACFECFDBFA81BA68 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		A0727DD6A40AD7C1624366E6 /* NodeMobile.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = NodeMobile.xcframework; path = "Frameworks/nodejs-mobile/NodeMobile.xcframework"; sourceTree = "<group>"; };
+		A7A8C5AEBFB002666603D173 /* Stremio-Bridging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Stremio-Bridging.h"; sourceTree = "<group>"; };
 		B5E444C91DFD56A204F50CCF /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
 		B82CED1B096BBB7156C07373 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
 		BF33265341F48C3B5D3058B2 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
@@ -89,6 +96,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE9DE1BA3E59595048DE2DEF /* MobileVLCKit.xcframework in Frameworks */,
+				5A125A0431C04681CC686505 /* NodeMobile.xcframework in Frameworks */,
 				251C442D800F0296426CF195 /* AudioToolbox.framework in Frameworks */,
 				E5D69AE039D9942EAB6DBE87 /* AVFoundation.framework in Frameworks */,
 				335853AD4557BAEEAB340554 /* CFNetwork.framework in Frameworks */,
@@ -129,9 +137,11 @@
 				A072293CACFECFDBFA81BA68 /* AppSettings.swift */,
 				CF7CEEDD36F3B6D9682B7AFF /* ContentView.swift */,
 				0C27EE54F759BC84A6A99BB5 /* Info.plist */,
+				3B081B2FC6C22588C3929EC6 /* NodeServer.swift */,
 				5F1C683877EF860348734561 /* OnboardingView.swift */,
 				4738EF04B65EEE571CB9E061 /* Playback.swift */,
 				71D9AE3826C05CF2D5A398BE /* StreamProxy.swift */,
+				A7A8C5AEBFB002666603D173 /* Stremio-Bridging.h */,
 				00729BDABC0E86B8F9FD259C /* StremioApp.swift */,
 				121D273AC982D87DC99C98A8 /* WebView.swift */,
 			);
@@ -155,6 +165,7 @@
 				311BDD6134C9EB1EE7A0BC57 /* libxml2.tbd */,
 				D8F7764589FA6767AC6F7183 /* libz.tbd */,
 				2BACA929A18F6E6ACBD0261C /* MobileVLCKit.xcframework */,
+				A0727DD6A40AD7C1624366E6 /* NodeMobile.xcframework */,
 				B82CED1B096BBB7156C07373 /* OpenGLES.framework */,
 				1B40A2DA69AFBCCA38899132 /* QuartzCore.framework */,
 				458B78D00A52C54DEBC59300 /* Security.framework */,
@@ -246,6 +257,7 @@
 			files = (
 				A0A9416F55F2449F0A82CC26 /* AppSettings.swift in Sources */,
 				6DC108E4BFB5C5E79FA47B1D /* ContentView.swift in Sources */,
+				1F07D03915B193722D09E6C5 /* NodeServer.swift in Sources */,
 				A78F3AB2792333AF77529D33 /* OnboardingView.swift in Sources */,
 				A8814BC78E54F1373D7A6483 /* Playback.swift in Sources */,
 				F19CFA25D229D3D30F6D0A98 /* StreamProxy.swift in Sources */,
@@ -387,6 +399,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"Frameworks\"",
+					"\"Frameworks/nodejs-mobile\"",
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/Info.plist;
@@ -398,6 +411,7 @@
 				OTHER_LDFLAGS = "-ObjC -lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = dev.woolston.stremio;
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/Stremio-Bridging.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -414,6 +428,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"Frameworks\"",
+					"\"Frameworks/nodejs-mobile\"",
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/Info.plist;
@@ -425,6 +440,7 @@
 				OTHER_LDFLAGS = "-ObjC -lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = dev.woolston.stremio;
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/Stremio-Bridging.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

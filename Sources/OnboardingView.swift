@@ -6,8 +6,11 @@ import SwiftUI
 struct OnboardingView: View {
     let onDone: () -> Void
 
-    private enum Choice { case selfHosted, official }
+    private enum Choice { case builtIn, selfHosted }
     @State private var choice: Choice? = nil
+    @State private var busy = false
+    @State private var busyText = ""
+    @State private var error: String? = nil
     @State private var serverURL: String = UserDefaults.standard.string(forKey: AppSettings.key) ?? ""
     @FocusState private var urlFocused: Bool
 
@@ -29,14 +32,21 @@ struct OnboardingView: View {
                         .font(.headline)
                         .foregroundStyle(.white.opacity(0.9))
 
-                    Text("Playing torrents needs a **Stremio streaming server**. The official website doesn\u{2019}t include one, so most people either run their own Stremio instance or use a debrid service.")
+                    Text("Torrents need a **streaming engine** to fetch them. This app can run one right on your phone \u{2014} or you can point it at a Stremio server you already run.")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.7))
 
                     optionCard(
+                        selected: choice == .builtIn,
+                        title: "Built-in streaming (recommended)",
+                        detail: "Plays torrents right on this device. Nothing to set up \u{2014} downloads Stremio\u{2019}s streaming engine once (~7 MB).",
+                        icon: "iphone.gen3"
+                    ) { choice = .builtIn; urlFocused = false }
+
+                    optionCard(
                         selected: choice == .selfHosted,
-                        title: "I run my own Stremio",
-                        detail: "Enter your instance (with its streaming server). Everything plays, including torrents.",
+                        title: "I run my own Stremio server",
+                        detail: "Enter your instance\u{2019}s URL. Saves phone battery and data; torrents are fetched by your server.",
                         icon: "server.rack"
                     ) { choice = .selfHosted; urlFocused = true }
 
@@ -51,22 +61,20 @@ struct OnboardingView: View {
                             .foregroundStyle(.white)
                     }
 
-                    optionCard(
-                        selected: choice == .official,
-                        title: "Use the official web.stremio.com",
-                        detail: "Torrents won\u{2019}t play unless you add a debrid addon (Real-Debrid, AllDebrid, Premiumize) or set a streaming server URL in Stremio\u{2019}s settings.",
-                        icon: "globe"
-                    ) { choice = .official; urlFocused = false }
+
+                    if let error {
+                        Text(error).font(.footnote).foregroundStyle(.red.opacity(0.9))
+                    }
 
                     Button(action: finish) {
-                        Text("Continue")
+                        Text(busy ? busyText : "Continue")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(canContinue ? purple : purple.opacity(0.35), in: RoundedRectangle(cornerRadius: 14))
                             .foregroundStyle(.white)
                     }
-                    .disabled(!canContinue)
+                    .disabled(!canContinue || busy)
                     .padding(.top, 6)
 
                     Text("You can change this later in iOS Settings \u{2192} Stremio.")
@@ -82,14 +90,28 @@ struct OnboardingView: View {
     private var canContinue: Bool {
         switch choice {
         case .selfHosted: return !serverURL.trimmingCharacters(in: .whitespaces).isEmpty
-        case .official: return true
+        case .builtIn: return true
         case nil: return false
         }
     }
 
     private func finish() {
-        AppSettings.save(webURL: choice == .official ? AppSettings.defaultWebURL : serverURL)
-        onDone()
+        error = nil
+        if choice == .builtIn {
+            busy = true
+            ServerScript.ensure(progress: { busyText = $0 }) { ok in
+                busy = false
+                if ok {
+                    AppSettings.save(mode: .builtIn, webURL: AppSettings.defaultWebURL)
+                    onDone()
+                } else {
+                    error = "Couldn\u{2019}t download the streaming engine. Check your connection and try again."
+                }
+            }
+        } else {
+            AppSettings.save(mode: .ownServer, webURL: serverURL)
+            onDone()
+        }
     }
 
     private var logo: some View {

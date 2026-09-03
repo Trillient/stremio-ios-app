@@ -58,15 +58,17 @@ struct StremioHostView: View {
         #if VLC_SELFTEST
         .onAppear {
             // Replays the real raw stream through the same cookie path as a Play tap.
+            guard let raw = ProcessInfo.processInfo.environment["STREMIO_SELFTEST_URL"], let url = URL(string: raw) else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                model.playWithCookies(
-                    url: URL(string: ProcessInfo.processInfo.environment["STREMIO_SELFTEST_URL"]
-                        ?? "https://your-streaming-server/dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c/1")!,
-                    title: "Big Buck Bunny (self-test)"
-                )
+                model.playWithCookies(url: url, title: "Self-test stream")
             }
         }
         #endif
+        .onAppear {
+            if AppSettings.mode == .builtIn {
+                ServerScript.ensure(progress: { _ in }) { ok in if ok { NodeServer.shared.startIfNeeded() } }
+            }
+        }
         .fullScreenCover(item: $playback.stream) { stream in
             VLCPlayerContainer(stream: stream, playback: playback) { playback.stop() }
                 .ignoresSafeArea()

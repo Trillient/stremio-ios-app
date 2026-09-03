@@ -28,6 +28,8 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         UIRequiresFullScreen: true
+        UIBackgroundModes:
+          - audio
         UIStatusBarStyle: UIStatusBarStyleLightContent
         UIViewControllerBasedStatusBarAppearance: false
         # Self-hosted instance is reachable over HTTPS via the Cloudflare tunnel,
@@ -36,6 +38,9 @@ targets:
           NSAllowsArbitraryLoads: true
     dependencies:
       - framework: Frameworks/MobileVLCKit.xcframework
+        embed: true
+        codeSign: true
+      - framework: Frameworks/nodejs-mobile/NodeMobile.xcframework
         embed: true
         codeSign: true
       - sdk: AudioToolbox.framework
@@ -67,3 +72,4 @@ targets:
         ENABLE_BITCODE: NO
         CODE_SIGN_STYLE: Automatic
         OTHER_LDFLAGS: "-ObjC -lc++"
+        SWIFT_OBJC_BRIDGING_HEADER: Sources/Stremio-Bridging.h
