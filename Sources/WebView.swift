@@ -22,7 +22,7 @@ final class WebViewModel: ObservableObject {
         webView?.load(URLRequest(url: url))
     }
 
-    /// Looks up the site cookies (Tinyauth SSO) and hands the stream to VLC.
+    /// Looks up the site cookies (SSO) and hands the stream to VLC.
     /// Shared by the page interception and the self-test.
     func playWithCookies(url rawURL: URL, title: String) {
         // Stremio's URL builder leaves a dangling '?'; libvlc's HTTP access can
@@ -154,7 +154,7 @@ struct WebView: UIViewRepresentable {
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
         config.allowsPictureInPictureMediaPlayback = true
-        // .default() is a persistent store, so the Tinyauth SSO cookie and the
+        // .default() is a persistent store, so the SSO cookie and the
         // Stremio login survive app restarts — no re-login on every launch.
         config.websiteDataStore = .default()
 

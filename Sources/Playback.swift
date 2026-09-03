@@ -9,7 +9,7 @@ final class PlaybackController: ObservableObject {
         let url: URL
         let title: String
         /// Cookie string copied from the web view so VLC's HTTP access is
-        /// authenticated against Tinyauth the same way the page is.
+        /// authenticated against your SSO the same way the page is.
         let cookieHeader: String?
     }
 

@@ -37,7 +37,8 @@ struct ContentView: View {
             // Replays the real raw stream through the same cookie path as a Play tap.
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                 model.playWithCookies(
-                    url: URL(string: "https://stremio.woolston.dev/dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c/1?")!,
+                    url: URL(string: ProcessInfo.processInfo.environment["STREMIO_SELFTEST_URL"]
+                        ?? "https://your-streaming-server/dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c/1")!,
                     title: "Big Buck Bunny (self-test)"
                 )
             }

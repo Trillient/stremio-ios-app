@@ -31,7 +31,7 @@ targets:
         UIStatusBarStyle: UIStatusBarStyleLightContent
         UIViewControllerBasedStatusBarAppearance: false
         # Self-hosted instance is reachable over HTTPS via the Cloudflare tunnel,
-        # but Tinyauth SSO can bounce through plain-HTTP hops on the LAN, so allow it.
+        # but a self-hosted SSO can bounce through plain-HTTP hops on the LAN, so allow it.
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     dependencies:
