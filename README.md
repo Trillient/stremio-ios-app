@@ -34,6 +34,11 @@ adds them. Streams from direct-link addons (debrid, HTTP) go straight to VLC.
 
 ## Setup
 
+On first launch the app asks where to connect: **your own Stremio instance** (enter its URL —
+torrents play via its bundled streaming server) or the **official web.stremio.com** (torrents
+need a debrid addon or a streaming server URL set in Stremio's settings). Change it any time in
+iOS Settings → Stremio, or flip "Show setup on next launch".
+
 1. **Streaming server.** Torrent playback needs a Stremio streaming server. Point the web app at
    yours: Stremio → Settings → *Streaming server URL* (e.g. `http://your-server:11470` or an
    `https://` reverse-proxied URL). Direct-link addons work without one.

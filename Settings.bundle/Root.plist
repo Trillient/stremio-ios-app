@@ -17,5 +17,11 @@
       <key>AutocapitalizationType</key><string>None</string>
       <key>AutocorrectionType</key><string>No</string>
     </dict>
+    <dict>
+      <key>Type</key><string>PSToggleSwitchSpecifier</string>
+      <key>Title</key><string>Show setup on next launch</string>
+      <key>Key</key><string>showSetupNextLaunch</string>
+      <key>DefaultValue</key><false/>
+    </dict>
   </array>
 </dict></plist>

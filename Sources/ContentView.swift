@@ -1,6 +1,21 @@
 import SwiftUI
 
 struct ContentView: View {
+    @AppStorage(AppSettings.onboardedKey) private var onboarded = false
+
+    var body: some View {
+        Group {
+            if onboarded { StremioHostView() } else { OnboardingView { onboarded = true } }
+        }
+        .onAppear {
+            AppSettings.consumeResetIfRequested()
+            onboarded = UserDefaults.standard.bool(forKey: AppSettings.onboardedKey)
+        }
+    }
+}
+
+/// The Stremio web UI plus the native player overlay.
+struct StremioHostView: View {
     @StateObject private var playback = PlaybackController()
     @StateObject private var model: WebViewModel
 
