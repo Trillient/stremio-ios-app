@@ -30,10 +30,20 @@ targets:
         UIRequiresFullScreen: true
         UIBackgroundModes:
           - audio
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleExternalDisplayNonInteractive:
+              - UISceneConfigurationName: External
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).ExternalDisplaySceneDelegate
         UIStatusBarStyle: UIStatusBarStyleLightContent
         UIViewControllerBasedStatusBarAppearance: false
         # Self-hosted instance is reachable over HTTPS via the Cloudflare tunnel,
         # but a self-hosted SSO can bounce through plain-HTTP hops on the LAN, so allow it.
+        NSBonjourServices:
+          - _googlecast._tcp
+          - _CC1AD845._googlecast._tcp
+        NSLocalNetworkUsageDescription: Finds Chromecast and TVs on your Wi-Fi so you can cast to them.
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     dependencies:
@@ -41,6 +51,9 @@ targets:
         embed: true
         codeSign: true
       - framework: Frameworks/nodejs-mobile/NodeMobile.xcframework
+        embed: true
+        codeSign: true
+      - framework: Frameworks/GoogleCast/GoogleCastSDK-ios-4.8.6_dynamic_xcframework/GoogleCast.xcframework
         embed: true
         codeSign: true
       - sdk: AudioToolbox.framework

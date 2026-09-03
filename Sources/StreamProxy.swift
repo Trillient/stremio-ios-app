@@ -14,7 +14,9 @@ final class StreamProxy {
     static let shared = StreamProxy()
     static let mirrorOrigin = URL(string: "https://web.stremio.com")!
 
-    private struct Route { let origin: URL; let cookie: String? }
+    private struct Route { let origin: URL; let cookie: String?; let isBase: Bool }
+    /// Content-Type the origin reported for a token's first response (for cast decisions).
+    private var contentTypes: [String: String] = [:]
     private var routes: [String: Route] = [:]
     private var listener: NWListener?
     private(set) var port: UInt16 = 0
@@ -29,16 +31,57 @@ final class StreamProxy {
 
     /// Returns the loopback URL VLC should open for `origin`.
     func register(origin: URL, cookie: String?) -> URL {
+        _ = registerToken(origin: origin, cookie: cookie, isBase: false)
+        return URL(string: "http://127.0.0.1:\(port)/\(lastToken)")!
+    }
+
+    private(set) var lastToken = ""
+
+    /// Registers a route. `isBase` routes forward `/<token>/<rest>` to `rest`
+    /// resolved against `origin` — needed for HLS playlists whose segments are
+    /// relative paths (a Chromecast fetches those through us).
+    @discardableResult
+    func registerToken(origin: URL, cookie: String?, isBase: Bool) -> String {
         startIfNeeded()
         let token = UUID().uuidString
-        lock.lock(); routes[token] = Route(origin: origin, cookie: cookie); lock.unlock()
-        return URL(string: "http://127.0.0.1:\(port)/\(token)")!
+        lock.lock(); routes[token] = Route(origin: origin, cookie: cookie, isBase: isBase); lastToken = token; lock.unlock()
+        return token
+    }
+
+    func contentType(forToken token: String) -> String? { lock.lock(); defer { lock.unlock() }; return contentTypes[token] }
+    func remember(contentType: String, forToken token: String) { lock.lock(); contentTypes[token] = contentType; lock.unlock() }
+
+    /// The phone's Wi-Fi IPv4, so devices on the LAN (a Chromecast) can reach the proxy.
+    static func lanIPv4() -> String? {
+        var addr: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return nil }
+        defer { freeifaddrs(ifaddr) }
+        for ptr in sequence(first: first, next: { $0.pointee.ifa_next }) {
+            let ifa = ptr.pointee
+            guard ifa.ifa_addr.pointee.sa_family == UInt8(AF_INET) else { continue }
+            let name = String(cString: ifa.ifa_name)
+            guard name == "en0" || name.hasPrefix("en") else { continue }
+            var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            if getnameinfo(ifa.ifa_addr, socklen_t(ifa.ifa_addr.pointee.sa_len), &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST) == 0 {
+                let ip = String(cString: host)
+                if !ip.hasPrefix("127.") && !ip.hasPrefix("169.254.") { addr = ip; if name == "en0" { break } }
+            }
+        }
+        return addr
+    }
+
+    /// URL a LAN device should use for a token (HLS gets a file-like suffix so
+    /// relative playlist references resolve under the token).
+    func lanURL(forToken token: String, hls: Bool) -> URL? {
+        guard let ip = Self.lanIPv4() else { return nil }
+        return URL(string: "http://\(ip):\(port)/\(token)\(hls ? "/master.m3u8" : "")")
     }
 
     private func startIfNeeded() {
         guard listener == nil else { return }
         let params = NWParameters.tcp
-        params.requiredLocalEndpoint = NWEndpoint.hostPort(host: "127.0.0.1", port: .any)
+        params.requiredLocalEndpoint = NWEndpoint.hostPort(host: "0.0.0.0", port: .any)
         guard let l = try? NWListener(using: params) else {
             NSLog("[STREMIOAPP][proxy] failed to create listener"); return
         }
@@ -107,6 +150,7 @@ final class StreamProxy {
             NSLog("[STREMIOAPP][proxy] %@ range=%@", method, headers["range"] ?? "-")
             req = r
             relay = Relay(conn: conn, request: r, followRedirects: false, maxAttempts: 45)
+            relay.onContentType = { [weak self] ct in self?.remember(contentType: ct, forToken: token) }
         } else {
             // Web mirror: same path/query on web.stremio.com.
             guard let url = URL(string: target, relativeTo: Self.mirrorOrigin)?.absoluteURL else { conn.cancel(); return }
@@ -143,6 +187,7 @@ private final class Relay: NSObject, URLSessionDataDelegate {
     private var headWritten = false
     private var retrying = false
     private var attempts = 0
+    var onContentType: ((String) -> Void)?
     private let retryDelay: TimeInterval = 3
 
     init(conn: NWConnection, request: URLRequest, followRedirects: Bool, maxAttempts: Int) {
@@ -220,6 +265,7 @@ private final class Relay: NSObject, URLSessionDataDelegate {
                   http.value(forHTTPHeaderField: "Content-Length") ?? "-", attempts)
         }
         headWritten = true
+        if let ct = http.value(forHTTPHeaderField: "Content-Type") { onContentType?(ct) }
         conn.send(content: Data(head.utf8), completion: .contentProcessed { _ in })
         completionHandler(.allow)
     }

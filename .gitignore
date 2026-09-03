@@ -12,3 +12,7 @@ Frameworks/
 # local test screenshots
 artifacts/
 .DS_Store
+GoogleCastSDK.zip
+GoogleCast/
+node.zip
+vlc.tar.xz

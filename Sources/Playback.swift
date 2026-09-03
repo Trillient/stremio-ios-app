@@ -1,5 +1,9 @@
 import SwiftUI
+import AVKit
+import AVFoundation
+import Combine
 import MobileVLCKit
+import GoogleCast
 
 /// Holds the stream currently requested for native playback. When `stream` is
 /// set, ContentView presents the VLC player over the web UI.
@@ -68,6 +72,14 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
     private let audioButton = UIButton(type: .system)
     private let subsButton = UIButton(type: .system)
     private let aspectButton = UIButton(type: .system)
+    private let castButton = UIButton(type: .system)
+    private let chromecastButton = GCKUICastButton(frame: CGRect(x: 0, y: 0, width: 28, height: 28))
+    private var castCancellables = Set<AnyCancellable>()
+    private var currentToken = ""
+    private var isCasting = false
+    private let tvPlaceholder = UIStackView()
+    private var tvCancellable: AnyCancellable?
+    private var pendingPosition: Float?
     private let playPauseButton = UIButton(type: .system)
     private let skipBackButton = UIButton(type: .system)
     private let skipForwardButton = UIButton(type: .system)
@@ -124,6 +136,28 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
         videoView.frame = view.bounds
         videoView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(videoView)
+
+        let icon = UIImageView(image: UIImage(systemName: "tv", withConfiguration: UIImage.SymbolConfiguration(pointSize: 44)))
+        icon.tintColor = UIColor.white.withAlphaComponent(0.9)
+        let label = UILabel()
+        label.text = "Playing on your TV"
+        label.textColor = .white
+        label.font = .systemFont(ofSize: 17, weight: .semibold)
+        let sub = UILabel()
+        sub.text = "Use the controls here."
+        sub.textColor = UIColor.white.withAlphaComponent(0.6)
+        sub.font = .systemFont(ofSize: 14)
+        tvPlaceholder.axis = .vertical
+        tvPlaceholder.alignment = .center
+        tvPlaceholder.spacing = 8
+        [icon, label, sub].forEach { tvPlaceholder.addArrangedSubview($0) }
+        tvPlaceholder.isHidden = true
+        tvPlaceholder.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(tvPlaceholder)
+        NSLayoutConstraint.activate([
+            tvPlaceholder.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            tvPlaceholder.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -90),
+        ])
 
         tapCatcher.frame = view.bounds
         tapCatcher.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -195,6 +229,7 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
         configureIcon(audioButton, "waveform", action: #selector(showAudioMenu))
         configureIcon(subsButton, "captions.bubble", action: #selector(showSubtitleMenu))
         configureIcon(aspectButton, "rectangle.arrowtriangle.2.inward", action: #selector(didTapAspect))
+        configureIcon(castButton, "airplayvideo", action: #selector(didTapCast))
         configureIcon(playPauseButton, "pause.fill", action: #selector(didTapPlayPause), size: 48)
         configureIcon(skipBackButton, "gobackward.10", action: #selector(didTapSkipBack), size: 32)
         configureIcon(skipForwardButton, "goforward.10", action: #selector(didTapSkipForward), size: 32)
@@ -206,9 +241,12 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         controls.addSubview(titleLabel)
 
-        let topRight = UIStackView(arrangedSubviews: [audioButton, subsButton, aspectButton])
+        chromecastButton.tintColor = .white
+        chromecastButton.translatesAutoresizingMaskIntoConstraints = false
+        chromecastButton.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        let topRight = UIStackView(arrangedSubviews: [audioButton, subsButton, aspectButton, chromecastButton, castButton])
         topRight.axis = .horizontal
-        topRight.spacing = 20
+        topRight.spacing = 16
         topRight.translatesAutoresizingMaskIntoConstraints = false
         controls.addSubview(topRight)
 
@@ -270,6 +308,7 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
 
         // VLC can't carry the SSO cookie itself; the loopback proxy adds it.
         let playURL = StreamProxy.shared.register(origin: stream.url, cookie: stream.cookieHeader)
+        currentToken = StreamProxy.shared.lastToken
         let media = VLCMedia(url: playURL)
         media.addOption(":network-caching=4000")
         media.addOption(":avcodec-skiploopfilter=3")
@@ -278,20 +317,137 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
               stream.url.absoluteString, (stream.cookieHeader?.isEmpty == false) ? "yes" : "no")
         player.media = media
         player.delegate = self
-        player.drawable = videoView
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+        applyRenderTarget(ExternalDisplay.shared.view)
+        tvCancellable = ExternalDisplay.shared.$view
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] v in self?.applyRenderTarget(v) }
         player.play()
         startStatsPolling()
         scheduleControlsHide()
+        wireCast()
+    }
+
+    // MARK: - Chromecast
+
+    private func wireCast() {
+        let cast = CastManager.shared
+        cast.onSessionStarted = { [weak self] in self?.castSessionStarted() }
+        cast.onSessionEnded = { [weak self] pos in self?.castSessionEnded(at: pos) }
+        cast.$remotePosition.combineLatest(cast.$remoteDuration)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] pos, dur in
+                guard let self, self.isCasting, dur > 0, !self.isScrubbing else { return }
+                self.slider.value = Float(pos / dur)
+                self.elapsedLabel.text = Self.clock(pos)
+                self.remainingLabel.text = "-" + Self.clock(max(0, dur - pos))
+            }.store(in: &castCancellables)
+        if cast.isConnected { castSessionStarted() }
+        #if VLC_SELFTEST
+        if ProcessInfo.processInfo.environment["STREMIO_SELFTEST_CAST"] == "1" {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 12) { _ = CastManager.shared.startSessionWithFirstDevice() }
+        }
+        #endif
+    }
+
+    private static func clock(_ t: TimeInterval) -> String {
+        let s = Int(t.rounded()); return s >= 3600 ? String(format: "%d:%02d:%02d", s/3600, s%3600/60, s%60) : String(format: "%02d:%02d", s/60, s%60)
+    }
+
+    /// Chromecast decodes the file itself, so it must be a format it supports.
+    private func castableContentType() -> String? {
+        let ct = (StreamProxy.shared.contentType(forToken: currentToken) ?? "").lowercased()
+        let path = stream.url.path.lowercased()
+        if ct.contains("mpegurl") || path.hasSuffix(".m3u8") { return "application/x-mpegURL" }
+        if ct.contains("mp4") || ct.contains("m4v") || path.hasSuffix(".mp4") || path.hasSuffix(".m4v") { return "video/mp4" }
+        if ct.contains("webm") || path.hasSuffix(".webm") { return "video/webm" }
+        if ct.contains("quicktime") || path.hasSuffix(".mov") { return "video/mp4" }
+        return nil
+    }
+
+    private func castSessionStarted() {
+        guard let player else { return }
+        guard let contentType = castableContentType(),
+              let url = StreamProxy.shared.lanURL(forToken: currentToken, hls: contentType.contains("mpegURL")) else {
+            let name = CastManager.shared.deviceName ?? "the Chromecast"
+            NSLog("[STREMIOAPP][cast] not castable: %@", StreamProxy.shared.contentType(forToken: currentToken) ?? "unknown type")
+            let a = UIAlertController(title: "Can\u{2019}t cast this file",
+                message: "\(name) can only play MP4/H.264, WebM and HLS streams, and this one is a format it can\u{2019}t decode (usually MKV / x265 / AC3). Use AirPlay or an HDMI adapter instead \u{2014} the phone decodes it and the TV shows it.",
+                preferredStyle: .alert)
+            a.addAction(UIAlertAction(title: "OK", style: .default))
+            present(a, animated: true)
+            CastManager.shared.endSession()
+            return
+        }
+        let seconds = Double(player.position) * (Double(player.media?.length.intValue ?? 0) / 1000)
+        player.pause()
+        isCasting = true
+        setTVPlaceholder(text: "Casting to \(CastManager.shared.deviceName ?? "TV")", visible: true)
+        CastManager.shared.load(url: url, contentType: contentType, title: stream.title, startAt: seconds)
+    }
+
+    private func castSessionEnded(at remoteSeconds: TimeInterval) {
+        guard isCasting, let player else { return }
+        isCasting = false
+        setTVPlaceholder(text: "Playing on your TV", visible: ExternalDisplay.shared.isConnected)
+        let len = Double(player.media?.length.intValue ?? 0) / 1000
+        if len > 0 { player.position = Float(remoteSeconds / len) }
+        player.play()
+        NSLog("[STREMIOAPP][cast] back to local at %.0fs", remoteSeconds)
+    }
+
+    private func setTVPlaceholder(text: String, visible: Bool) {
+        (tvPlaceholder.arrangedSubviews[1] as? UILabel)?.text = text
+        tvPlaceholder.isHidden = !visible
     }
 
     /// Never call VLCMediaPlayer.stop() on the main thread — on a stuck network
     /// input it blocks, which is what froze "close" mid-buffer. Detach it.
     private func stopPlayerAsync() {
+        tvCancellable = nil
+        castCancellables.removeAll()
+        CastManager.shared.onSessionStarted = nil
+        CastManager.shared.onSessionEnded = nil
         statsTimer?.invalidate(); statsTimer = nil
         controlsTimer?.invalidate(); controlsTimer = nil
         guard let p = player else { return }
         player = nil
         DispatchQueue.global(qos: .userInitiated).async { p.stop() }
+    }
+
+    /// Route VLC's output to the TV when one is attached, back to the phone when not.
+    /// libvlc won't re-parent a live video output, so if we're already playing we
+    /// restart on the new surface and seek back to where we were (~1s blip).
+    private func applyRenderTarget(_ tv: UIView?) {
+        guard let player else { return }
+        let target: UIView = tv ?? videoView
+        tvPlaceholder.isHidden = (tv == nil)
+        if tv != nil { videoView.transform = .identity; zoom = 1; filled = false }
+        let live = hasRenderedFrame && (player.isPlaying || player.state == .paused || player.state == .buffering)
+        if live, let media = player.media {
+            let pos = player.position
+            player.stop()
+            player.drawable = target
+            player.media = media
+            pendingPosition = pos > 0.001 ? pos : nil
+            player.play()
+            NSLog("[STREMIOAPP][tv] restarted on %@ at %.3f", tv == nil ? "phone" : "external display", pos)
+        } else {
+            player.drawable = target
+            NSLog("[STREMIOAPP][tv] rendering on %@", tv == nil ? "phone" : "external display")
+        }
+    }
+
+    @objc private func didTapCast() {
+        let onTV = ExternalDisplay.shared.isConnected
+        let title = onTV ? "Playing on your TV" : "Play on a TV"
+        let msg = onTV
+            ? "The video is on the connected display. Disconnect AirPlay / the HDMI adapter to bring it back to the phone."
+            : "Plays any file on any TV \u{2014} the phone decodes it and sends the picture:\n\n1. Open Control Center\n2. Tap Screen Mirroring\n3. Pick your Apple TV or AirPlay TV\n\nThe video fills the TV (not a mirrored phone screen) and you keep the controls here. A USB-C/Lightning-to-HDMI adapter works the same way.\n\nFor a Chromecast, use the Cast button \u{2014} works for MP4/H.264 streams."
+        let sheet = UIAlertController(title: title, message: msg, preferredStyle: .alert)
+        sheet.addAction(UIAlertAction(title: "OK", style: .default) { _ in self.scheduleControlsHide() })
+        present(sheet, animated: true)
+        controlsTimer?.invalidate()
     }
 
     // MARK: - Actions
@@ -305,6 +461,12 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
 
     @objc private func didTapPlayPause() {
         guard let player else { return }
+        if isCasting {
+            let playing = CastManager.shared.remotePlaying
+            playing ? CastManager.shared.pause() : CastManager.shared.play()
+            playPauseButton.setImage(Self.symbol(playing ? "play.fill" : "pause.fill", size: 48), for: .normal)
+            scheduleControlsHide(); return
+        }
         if player.isPlaying {
             player.pause()
             playPauseButton.setImage(Self.symbol("play.fill", size: 48), for: .normal)
@@ -315,10 +477,14 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
         scheduleControlsHide()
     }
 
-    @objc private func didTapSkipBack() { player?.jumpBackward(10); scheduleControlsHide() }
-    @objc private func didTapSkipForward() { player?.jumpForward(10); scheduleControlsHide() }
+    @objc private func didTapSkipBack() { isCasting ? CastManager.shared.skip(by: -10) : player?.jumpBackward(10); scheduleControlsHide() }
+    @objc private func didTapSkipForward() { isCasting ? CastManager.shared.skip(by: 10) : player?.jumpForward(10); scheduleControlsHide() }
     @objc private func scrubStart() { isScrubbing = true }
-    @objc private func scrubEnd() { player?.position = slider.value; isScrubbing = false; scheduleControlsHide() }
+    @objc private func scrubEnd() {
+        if isCasting { CastManager.shared.seek(to: Double(slider.value) * CastManager.shared.remoteDuration) }
+        else { player?.position = slider.value }
+        isScrubbing = false; scheduleControlsHide()
+    }
 
     // MARK: - Audio / subtitle tracks
 
@@ -571,6 +737,11 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
 
     func mediaPlayerTimeChanged(_ aNotification: Notification) {
         guard let player else { return }
+        if let p = pendingPosition, player.isPlaying {
+            pendingPosition = nil
+            player.position = p
+            NSLog("[STREMIOAPP][tv] resumed at %.3f", p)
+        }
         if !hasRenderedFrame {
             hasRenderedFrame = true
             spinner.stopAnimating()

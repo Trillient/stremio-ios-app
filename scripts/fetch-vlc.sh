@@ -19,4 +19,10 @@ if [ ! -d nodejs-mobile/NodeMobile.xcframework ]; then
   curl -fL -o node.zip "https://github.com/nodejs-mobile/nodejs-mobile/releases/download/$NODE/nodejs-mobile-$NODE-ios.zip"
   rm -rf nodejs-mobile && unzip -q node.zip -d nodejs-mobile && rm node.zip
 fi
+CAST="4.8.6"
+if [ ! -d GoogleCast/GoogleCastSDK-ios-${CAST}_dynamic_xcframework ]; then
+  echo "Downloading Google Cast SDK $CAST (~9 MB)..."
+  curl -fL -o cast.zip "https://dl.google.com/dl/chromecast/sdk/ios/GoogleCastSDK-ios-${CAST}_dynamic.zip"
+  rm -rf GoogleCast && mkdir GoogleCast && unzip -q cast.zip -d GoogleCast && rm cast.zip
+fi
 echo "Done. Frameworks/ ready."

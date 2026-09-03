@@ -46,6 +46,16 @@ On first launch, pick one:
 
 Change it any time in iOS Settings → Stremio, or flip "Show setup on next launch".
 
+## Play on a TV
+
+- **AirPlay / HDMI (any file, any codec):** Control Center -> Screen Mirroring -> your Apple TV or
+  AirPlay TV (or plug in a USB-C/Lightning->HDMI adapter). The phone keeps decoding with VLC and
+  renders full-quality video onto the TV as an external display; you keep the controls. Works for
+  MKV / x265 / AC3 / DTS because the TV never decodes anything.
+- **Chromecast / Google TV:** the Cast button. The TV fetches and decodes the stream itself, so it
+  only works for formats a Chromecast supports (MP4/H.264, HLS, WebM). MKV/x265/AC3 torrents can't
+  be cast directly and the app says so; use AirPlay/HDMI for those.
+
 ## Build & install
 
 ```bash
