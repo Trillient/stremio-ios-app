@@ -6,6 +6,8 @@ import WebKit
 final class WebViewModel: ObservableObject {
     @Published var isLoading = true
     @Published var errorMessage: String?
+    /// Background colour reported by the page, used to tint the safe-area chrome.
+    @Published var chromeColor: UIColor = UIColor(red: 0.055, green: 0.043, blue: 0.12, alpha: 1) // Stremio navy
 
     let url: URL
     let playback: PlaybackController
@@ -168,6 +170,21 @@ private let interceptScript = """
 })();
 """
 
+private let bgColorScript = """
+(function () {
+  function report() {
+    try {
+      var el = document.querySelector('#root, .app, body') || document.body;
+      var c = getComputedStyle(el).backgroundColor;
+      if (c && c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') {
+        window.webkit.messageHandlers.bg.postMessage(c);
+      }
+    } catch (e) {}
+  }
+  report(); setTimeout(report, 800); setTimeout(report, 2500);
+})();
+"""
+
 private let pinLocalServerScript = """
 (function () {
   try {
@@ -209,14 +226,18 @@ struct WebView: UIViewRepresentable {
         // Weak proxy: userContentController retains the handler strongly, and the
         // coordinator retains the web view — a direct add() would leak both.
         config.userContentController.add(WeakScriptHandler(context.coordinator), name: "vlc")
+        config.userContentController.add(WeakScriptHandler(context.coordinator), name: "bg")
+        config.userContentController.addUserScript(WKUserScript(source: bgColorScript,
+                                                                injectionTime: .atDocumentEnd,
+                                                                forMainFrameOnly: true))
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.contentInsetAdjustmentBehavior = .never
-        webView.isOpaque = false
-        webView.backgroundColor = .black
-        webView.scrollView.backgroundColor = .black
+        webView.isOpaque = true
+        webView.backgroundColor = UIColor(red: 0.055, green: 0.043, blue: 0.12, alpha: 1)
+        webView.scrollView.backgroundColor = webView.backgroundColor
 
         model.webView = webView
         webView.load(URLRequest(url: model.url))
@@ -228,6 +249,15 @@ struct WebView: UIViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         private let model: WebViewModel
         init(_ model: WebViewModel) { self.model = model }
+
+        static func color(fromCSS css: String) -> UIColor? {
+            let nums = css.replacingOccurrences(of: "rgba(", with: "")
+                .replacingOccurrences(of: "rgb(", with: "")
+                .replacingOccurrences(of: ")", with: "")
+                .split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            guard nums.count >= 3, let r = Double(nums[0]), let g = Double(nums[1]), let b = Double(nums[2]) else { return nil }
+            return UIColor(red: r/255, green: g/255, blue: b/255, alpha: 1)
+        }
 
         // MARK: navigation
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
@@ -252,6 +282,14 @@ struct WebView: UIViewRepresentable {
         // MARK: stream interception
         func userContentController(_ userContentController: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
+            if message.name == "bg", let css = message.body as? String, let color = Self.color(fromCSS: css) {
+                DispatchQueue.main.async {
+                    self.model.chromeColor = color
+                    self.model.webView?.backgroundColor = color
+                    self.model.webView?.scrollView.backgroundColor = color
+                }
+                return
+            }
             guard message.name == "vlc",
                   let body = message.body as? String,
                   let data = body.data(using: .utf8),

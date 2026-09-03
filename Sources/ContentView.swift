@@ -38,7 +38,9 @@ struct StremioHostView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            // Match the status-bar/home-indicator area to Stremio's own background
+            // so it reads as one full-bleed page, not a black letterbox.
+            Color(model.chromeColor).ignoresSafeArea()
 
             WebView(model: model)
                 .ignoresSafeArea(edges: .bottom)
