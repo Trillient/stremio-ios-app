@@ -1,0 +1,13 @@
+# build products
+build/
+build-device/
+DerivedData/
+*.xcresult
+# generated per-user Xcode state
+xcuserdata/
+*.xcuserstate
+# MobileVLCKit is 1.3 GB — fetched by scripts/fetch-vlc.sh, never committed
+Frameworks/
+# local test screenshots
+artifacts/
+.DS_Store

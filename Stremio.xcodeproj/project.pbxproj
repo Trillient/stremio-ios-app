@@ -1,0 +1,430 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		10EA4D814E4BD3A67BDB9B0B /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 454004111D3A9A550087EBF4 /* CoreGraphics.framework */; };
+		23FF1D39DE3DF63220A18226 /* MobileVLCKit.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2BACA929A18F6E6ACBD0261C /* MobileVLCKit.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		251C442D800F0296426CF195 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5A3A31A797E882D50AF1C0F /* AudioToolbox.framework */; };
+		335853AD4557BAEEAB340554 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8EF09181A1FDEC2A7B0FBEA /* CFNetwork.framework */; };
+		374B1B22DAB016469486F92D /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 458B78D00A52C54DEBC59300 /* Security.framework */; };
+		457BC5B2967B103829B16632 /* CoreText.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FA81F3C8296E9EB1AD424ED /* CoreText.framework */; };
+		4AC14CD745822E24CC128BA2 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF33265341F48C3B5D3058B2 /* CoreMedia.framework */; };
+		5FD11BB4046D02B9A82B39BE /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 79FABE35DEDDB64E23A7A7C1 /* libiconv.tbd */; };
+		616FC9A0F0ACAEE7A6C76392 /* libbz2.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 179BD332B3C98A2F490FE479 /* libbz2.tbd */; };
+		6DC108E4BFB5C5E79FA47B1D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7CEEDD36F3B6D9682B7AFF /* ContentView.swift */; };
+		824A0D666D0A1CDAF17B5C1A /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 45CE31144294F32A128B9CB5 /* CoreAudio.framework */; };
+		8727CED9179928FA3C8AE57B /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01EB880453E2AD8000160DFA /* CoreVideo.framework */; };
+		89428090FA187365E3A71E77 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121D273AC982D87DC99C98A8 /* WebView.swift */; };
+		8A40E90F39D092777D7021AE /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = D8F7764589FA6767AC6F7183 /* libz.tbd */; };
+		8AC8876712FC2A3F721DDDC2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1B40A2DA69AFBCCA38899132 /* QuartzCore.framework */; };
+		A8814BC78E54F1373D7A6483 /* Playback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4738EF04B65EEE571CB9E061 /* Playback.swift */; };
+		B34274343DBEE21918A0B042 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B82CED1B096BBB7156C07373 /* OpenGLES.framework */; };
+		B6CB775C4E7FF03D367FE252 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F3D6E60028830A016DBDE4DE /* libc++.tbd */; };
+		CEAD2E0D1379B03936DE138F /* libxml2.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 311BDD6134C9EB1EE7A0BC57 /* libxml2.tbd */; };
+		E5D69AE039D9942EAB6DBE87 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 705470C06840FADEB5554AE8 /* AVFoundation.framework */; };
+		EE9DE1BA3E59595048DE2DEF /* MobileVLCKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2BACA929A18F6E6ACBD0261C /* MobileVLCKit.xcframework */; };
+		F19CFA25D229D3D30F6D0A98 /* StreamProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D9AE3826C05CF2D5A398BE /* StreamProxy.swift */; };
+		FB785297BCAFE59A0B5D7588 /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5E444C91DFD56A204F50CCF /* VideoToolbox.framework */; };
+		FF3C21F73E5DC81B85ABC182 /* StremioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00729BDABC0E86B8F9FD259C /* StremioApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B8B5093DDAB2E96820572D96 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				23FF1D39DE3DF63220A18226 /* MobileVLCKit.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0070A61FE01FF46067661E7F /* Stremio.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Stremio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		00729BDABC0E86B8F9FD259C /* StremioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StremioApp.swift; sourceTree = "<group>"; };
+		01EB880453E2AD8000160DFA /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		0C27EE54F759BC84A6A99BB5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		121D273AC982D87DC99C98A8 /* WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
+		179BD332B3C98A2F490FE479 /* libbz2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libbz2.tbd; path = usr/lib/libbz2.tbd; sourceTree = SDKROOT; };
+		1B40A2DA69AFBCCA38899132 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		2BACA929A18F6E6ACBD0261C /* MobileVLCKit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = MobileVLCKit.xcframework; path = Frameworks/MobileVLCKit.xcframework; sourceTree = "<group>"; };
+		311BDD6134C9EB1EE7A0BC57 /* libxml2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libxml2.tbd; path = usr/lib/libxml2.tbd; sourceTree = SDKROOT; };
+		454004111D3A9A550087EBF4 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		458B78D00A52C54DEBC59300 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		45CE31144294F32A128B9CB5 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		4738EF04B65EEE571CB9E061 /* Playback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playback.swift; sourceTree = "<group>"; };
+		705470C06840FADEB5554AE8 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		71D9AE3826C05CF2D5A398BE /* StreamProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamProxy.swift; sourceTree = "<group>"; };
+		79FABE35DEDDB64E23A7A7C1 /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
+		9FA81F3C8296E9EB1AD424ED /* CoreText.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreText.framework; path = System/Library/Frameworks/CoreText.framework; sourceTree = SDKROOT; };
+		B5E444C91DFD56A204F50CCF /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
+		B82CED1B096BBB7156C07373 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
+		BF33265341F48C3B5D3058B2 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		C5A3A31A797E882D50AF1C0F /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		CF7CEEDD36F3B6D9682B7AFF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		D8EF09181A1FDEC2A7B0FBEA /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
+		D8F7764589FA6767AC6F7183 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
+		F3D6E60028830A016DBDE4DE /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3FECE886B333361F982F6FF6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE9DE1BA3E59595048DE2DEF /* MobileVLCKit.xcframework in Frameworks */,
+				251C442D800F0296426CF195 /* AudioToolbox.framework in Frameworks */,
+				E5D69AE039D9942EAB6DBE87 /* AVFoundation.framework in Frameworks */,
+				335853AD4557BAEEAB340554 /* CFNetwork.framework in Frameworks */,
+				824A0D666D0A1CDAF17B5C1A /* CoreAudio.framework in Frameworks */,
+				10EA4D814E4BD3A67BDB9B0B /* CoreGraphics.framework in Frameworks */,
+				4AC14CD745822E24CC128BA2 /* CoreMedia.framework in Frameworks */,
+				457BC5B2967B103829B16632 /* CoreText.framework in Frameworks */,
+				8727CED9179928FA3C8AE57B /* CoreVideo.framework in Frameworks */,
+				B34274343DBEE21918A0B042 /* OpenGLES.framework in Frameworks */,
+				8AC8876712FC2A3F721DDDC2 /* QuartzCore.framework in Frameworks */,
+				374B1B22DAB016469486F92D /* Security.framework in Frameworks */,
+				FB785297BCAFE59A0B5D7588 /* VideoToolbox.framework in Frameworks */,
+				B6CB775C4E7FF03D367FE252 /* libc++.tbd in Frameworks */,
+				CEAD2E0D1379B03936DE138F /* libxml2.tbd in Frameworks */,
+				8A40E90F39D092777D7021AE /* libz.tbd in Frameworks */,
+				616FC9A0F0ACAEE7A6C76392 /* libbz2.tbd in Frameworks */,
+				5FD11BB4046D02B9A82B39BE /* libiconv.tbd in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		293C40D1DE3C3686039B4C3C = {
+			isa = PBXGroup;
+			children = (
+				B5D87D550BB113A0B6EFF6D9 /* Sources */,
+				E136A0A928A5FDE791B62828 /* Frameworks */,
+				E956DB55FADD216406AC7900 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B5D87D550BB113A0B6EFF6D9 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				CF7CEEDD36F3B6D9682B7AFF /* ContentView.swift */,
+				0C27EE54F759BC84A6A99BB5 /* Info.plist */,
+				4738EF04B65EEE571CB9E061 /* Playback.swift */,
+				71D9AE3826C05CF2D5A398BE /* StreamProxy.swift */,
+				00729BDABC0E86B8F9FD259C /* StremioApp.swift */,
+				121D273AC982D87DC99C98A8 /* WebView.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		E136A0A928A5FDE791B62828 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C5A3A31A797E882D50AF1C0F /* AudioToolbox.framework */,
+				705470C06840FADEB5554AE8 /* AVFoundation.framework */,
+				D8EF09181A1FDEC2A7B0FBEA /* CFNetwork.framework */,
+				45CE31144294F32A128B9CB5 /* CoreAudio.framework */,
+				454004111D3A9A550087EBF4 /* CoreGraphics.framework */,
+				BF33265341F48C3B5D3058B2 /* CoreMedia.framework */,
+				9FA81F3C8296E9EB1AD424ED /* CoreText.framework */,
+				01EB880453E2AD8000160DFA /* CoreVideo.framework */,
+				179BD332B3C98A2F490FE479 /* libbz2.tbd */,
+				F3D6E60028830A016DBDE4DE /* libc++.tbd */,
+				79FABE35DEDDB64E23A7A7C1 /* libiconv.tbd */,
+				311BDD6134C9EB1EE7A0BC57 /* libxml2.tbd */,
+				D8F7764589FA6767AC6F7183 /* libz.tbd */,
+				2BACA929A18F6E6ACBD0261C /* MobileVLCKit.xcframework */,
+				B82CED1B096BBB7156C07373 /* OpenGLES.framework */,
+				1B40A2DA69AFBCCA38899132 /* QuartzCore.framework */,
+				458B78D00A52C54DEBC59300 /* Security.framework */,
+				B5E444C91DFD56A204F50CCF /* VideoToolbox.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		E956DB55FADD216406AC7900 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0070A61FE01FF46067661E7F /* Stremio.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A1C468C61AB8D679598574B6 /* Stremio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D8541C5AD3E3D3CB23EDE6B6 /* Build configuration list for PBXNativeTarget "Stremio" */;
+			buildPhases = (
+				2C245CD2C16C98A101CE7327 /* Sources */,
+				3FECE886B333361F982F6FF6 /* Frameworks */,
+				B8B5093DDAB2E96820572D96 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Stremio;
+			packageProductDependencies = (
+			);
+			productName = Stremio;
+			productReference = 0070A61FE01FF46067661E7F /* Stremio.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9DFA6C2058E29B1982D15250 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					A1C468C61AB8D679598574B6 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 8F770DA7C838A822DDBC5739 /* Build configuration list for PBXProject "Stremio" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 293C40D1DE3C3686039B4C3C;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E956DB55FADD216406AC7900 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1C468C61AB8D679598574B6 /* Stremio */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2C245CD2C16C98A101CE7327 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6DC108E4BFB5C5E79FA47B1D /* ContentView.swift in Sources */,
+				A8814BC78E54F1373D7A6483 /* Playback.swift in Sources */,
+				F19CFA25D229D3D30F6D0A98 /* StreamProxy.swift in Sources */,
+				FF3C21F73E5DC81B85ABC182 /* StremioApp.swift in Sources */,
+				89428090FA187365E3A71E77 /* WebView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AABC13308D03A041FA6B0A22 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		C00D0D08110DA68B2BBF7E91 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		C7D6856FBA7B5F1469B69189 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_BITCODE = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"Frameworks\"",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "-ObjC -lc++";
+				PRODUCT_BUNDLE_IDENTIFIER = dev.woolston.stremio;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FC6177D5776D1AFE50EEE350 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_BITCODE = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"Frameworks\"",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "-ObjC -lc++";
+				PRODUCT_BUNDLE_IDENTIFIER = dev.woolston.stremio;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		8F770DA7C838A822DDBC5739 /* Build configuration list for PBXProject "Stremio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AABC13308D03A041FA6B0A22 /* Debug */,
+				C00D0D08110DA68B2BBF7E91 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D8541C5AD3E3D3CB23EDE6B6 /* Build configuration list for PBXNativeTarget "Stremio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C7D6856FBA7B5F1469B69189 /* Debug */,
+				FC6177D5776D1AFE50EEE350 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9DFA6C2058E29B1982D15250 /* Project object */;
+}

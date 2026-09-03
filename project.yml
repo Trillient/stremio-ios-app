@@ -1,0 +1,66 @@
+name: Stremio
+options:
+  bundleIdPrefix: dev.woolston
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+targets:
+  Stremio:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Stremio
+        UILaunchScreen:
+          UIColorName: ""
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIRequiresFullScreen: true
+        UIStatusBarStyle: UIStatusBarStyleLightContent
+        UIViewControllerBasedStatusBarAppearance: false
+        # Self-hosted instance is reachable over HTTPS via the Cloudflare tunnel,
+        # but Tinyauth SSO can bounce through plain-HTTP hops on the LAN, so allow it.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    dependencies:
+      - framework: Frameworks/MobileVLCKit.xcframework
+        embed: true
+        codeSign: true
+      - sdk: AudioToolbox.framework
+      - sdk: AVFoundation.framework
+      - sdk: CFNetwork.framework
+      - sdk: CoreAudio.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreMedia.framework
+      - sdk: CoreText.framework
+      - sdk: CoreVideo.framework
+      - sdk: OpenGLES.framework
+      - sdk: QuartzCore.framework
+      - sdk: Security.framework
+      - sdk: VideoToolbox.framework
+      - sdk: libc++.tbd
+      - sdk: libxml2.tbd
+      - sdk: libz.tbd
+      - sdk: libbz2.tbd
+      - sdk: libiconv.tbd
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.woolston.stremio
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: NO
+        SWIFT_VERSION: "5.0"
+        ENABLE_BITCODE: NO
+        CODE_SIGN_STYLE: Automatic
+        OTHER_LDFLAGS: "-ObjC -lc++"
