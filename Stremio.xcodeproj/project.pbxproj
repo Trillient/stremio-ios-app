@@ -14,14 +14,17 @@
 		374B1B22DAB016469486F92D /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 458B78D00A52C54DEBC59300 /* Security.framework */; };
 		457BC5B2967B103829B16632 /* CoreText.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FA81F3C8296E9EB1AD424ED /* CoreText.framework */; };
 		4AC14CD745822E24CC128BA2 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF33265341F48C3B5D3058B2 /* CoreMedia.framework */; };
+		5E8D0311044B1A984389C438 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 36C8B9B03A3517833CD7D889 /* Assets.xcassets */; };
 		5FD11BB4046D02B9A82B39BE /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 79FABE35DEDDB64E23A7A7C1 /* libiconv.tbd */; };
 		616FC9A0F0ACAEE7A6C76392 /* libbz2.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 179BD332B3C98A2F490FE479 /* libbz2.tbd */; };
 		6DC108E4BFB5C5E79FA47B1D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7CEEDD36F3B6D9682B7AFF /* ContentView.swift */; };
+		715B12808AEFB7A4D8E0E1CF /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 49F83A1086332772062EE2C1 /* Settings.bundle */; };
 		824A0D666D0A1CDAF17B5C1A /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 45CE31144294F32A128B9CB5 /* CoreAudio.framework */; };
 		8727CED9179928FA3C8AE57B /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01EB880453E2AD8000160DFA /* CoreVideo.framework */; };
 		89428090FA187365E3A71E77 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121D273AC982D87DC99C98A8 /* WebView.swift */; };
 		8A40E90F39D092777D7021AE /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = D8F7764589FA6767AC6F7183 /* libz.tbd */; };
 		8AC8876712FC2A3F721DDDC2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1B40A2DA69AFBCCA38899132 /* QuartzCore.framework */; };
+		A0A9416F55F2449F0A82CC26 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A072293CACFECFDBFA81BA68 /* AppSettings.swift */; };
 		A8814BC78E54F1373D7A6483 /* Playback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4738EF04B65EEE571CB9E061 /* Playback.swift */; };
 		B34274343DBEE21918A0B042 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B82CED1B096BBB7156C07373 /* OpenGLES.framework */; };
 		B6CB775C4E7FF03D367FE252 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F3D6E60028830A016DBDE4DE /* libc++.tbd */; };
@@ -57,14 +60,17 @@
 		1B40A2DA69AFBCCA38899132 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		2BACA929A18F6E6ACBD0261C /* MobileVLCKit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = MobileVLCKit.xcframework; path = Frameworks/MobileVLCKit.xcframework; sourceTree = "<group>"; };
 		311BDD6134C9EB1EE7A0BC57 /* libxml2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libxml2.tbd; path = usr/lib/libxml2.tbd; sourceTree = SDKROOT; };
+		36C8B9B03A3517833CD7D889 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		454004111D3A9A550087EBF4 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		458B78D00A52C54DEBC59300 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		45CE31144294F32A128B9CB5 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		4738EF04B65EEE571CB9E061 /* Playback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playback.swift; sourceTree = "<group>"; };
+		49F83A1086332772062EE2C1 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = wrapper.cfbundle; path = Settings.bundle; sourceTree = "<group>"; };
 		705470C06840FADEB5554AE8 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		71D9AE3826C05CF2D5A398BE /* StreamProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamProxy.swift; sourceTree = "<group>"; };
 		79FABE35DEDDB64E23A7A7C1 /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
 		9FA81F3C8296E9EB1AD424ED /* CoreText.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreText.framework; path = System/Library/Frameworks/CoreText.framework; sourceTree = SDKROOT; };
+		A072293CACFECFDBFA81BA68 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		B5E444C91DFD56A204F50CCF /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
 		B82CED1B096BBB7156C07373 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
 		BF33265341F48C3B5D3058B2 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
@@ -107,6 +113,8 @@
 		293C40D1DE3C3686039B4C3C = {
 			isa = PBXGroup;
 			children = (
+				36C8B9B03A3517833CD7D889 /* Assets.xcassets */,
+				49F83A1086332772062EE2C1 /* Settings.bundle */,
 				B5D87D550BB113A0B6EFF6D9 /* Sources */,
 				E136A0A928A5FDE791B62828 /* Frameworks */,
 				E956DB55FADD216406AC7900 /* Products */,
@@ -116,6 +124,7 @@
 		B5D87D550BB113A0B6EFF6D9 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				A072293CACFECFDBFA81BA68 /* AppSettings.swift */,
 				CF7CEEDD36F3B6D9682B7AFF /* ContentView.swift */,
 				0C27EE54F759BC84A6A99BB5 /* Info.plist */,
 				4738EF04B65EEE571CB9E061 /* Playback.swift */,
@@ -167,6 +176,7 @@
 			buildConfigurationList = D8541C5AD3E3D3CB23EDE6B6 /* Build configuration list for PBXNativeTarget "Stremio" */;
 			buildPhases = (
 				2C245CD2C16C98A101CE7327 /* Sources */,
+				4302DCABA1EDF5CFA7579A1D /* Resources */,
 				3FECE886B333361F982F6FF6 /* Frameworks */,
 				B8B5093DDAB2E96820572D96 /* Embed Frameworks */,
 			);
@@ -214,11 +224,24 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		4302DCABA1EDF5CFA7579A1D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5E8D0311044B1A984389C438 /* Assets.xcassets in Resources */,
+				715B12808AEFB7A4D8E0E1CF /* Settings.bundle in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		2C245CD2C16C98A101CE7327 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A0A9416F55F2449F0A82CC26 /* AppSettings.swift in Sources */,
 				6DC108E4BFB5C5E79FA47B1D /* ContentView.swift in Sources */,
 				A8814BC78E54F1373D7A6483 /* Playback.swift in Sources */,
 				F19CFA25D229D3D30F6D0A98 /* StreamProxy.swift in Sources */,

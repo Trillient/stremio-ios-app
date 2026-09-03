@@ -8,7 +8,7 @@ struct ContentView: View {
         let playback = PlaybackController()
         _playback = StateObject(wrappedValue: playback)
         _model = StateObject(wrappedValue: WebViewModel(
-            url: URL(string: "https://stremio.woolston.dev")!,
+            url: AppSettings.webURL,
             playback: playback
         ))
     }
