@@ -13,21 +13,37 @@ final class PlaybackController: ObservableObject {
         let cookieHeader: String?
     }
 
+    struct ExternalSubtitle: Identifiable, Equatable {
+        var id: String { url.absoluteString }
+        let lang: String
+        let url: URL
+    }
+
     @Published var stream: Stream?
+    /// Subtitles offered by Stremio's subtitle addons for the current item.
+    @Published var externalSubtitles: [ExternalSubtitle] = []
 
     func play(url: URL, title: String, cookieHeader: String?) {
         stream = Stream(url: url, title: title, cookieHeader: cookieHeader)
     }
 
-    func stop() { stream = nil }
+    func addExternalSubtitles(_ items: [ExternalSubtitle]) {
+        for item in items where !externalSubtitles.contains(item) { externalSubtitles.append(item) }
+    }
+
+    func stop() {
+        NSLog("[STREMIOAPP] PlaybackController.stop() — dismissing player")
+        stream = nil; externalSubtitles = []
+    }
 }
 
 struct VLCPlayerContainer: UIViewControllerRepresentable {
     let stream: PlaybackController.Stream
+    let playback: PlaybackController
     let onClose: () -> Void
 
     func makeUIViewController(context: Context) -> VLCPlayerViewController {
-        VLCPlayerViewController(stream: stream, onClose: onClose)
+        VLCPlayerViewController(stream: stream, playback: playback, onClose: onClose)
     }
 
     func updateUIViewController(_ uiViewController: VLCPlayerViewController, context: Context) {}
@@ -35,8 +51,10 @@ struct VLCPlayerContainer: UIViewControllerRepresentable {
 
 final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, UIGestureRecognizerDelegate {
     private let stream: PlaybackController.Stream
+    private let playback: PlaybackController
     private let onClose: () -> Void
     private var player: VLCMediaPlayer!
+    private var selectedExternalSubtitle: URL?
 
     private let videoView = UIView()
     private let tapCatcher = UIView()          // above VLC's render view, owns the gestures
@@ -70,14 +88,15 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
     private var filled = false
     private static let vlcLogger = VLCLogBridge()
 
-    init(stream: PlaybackController.Stream, onClose: @escaping () -> Void) {
+    init(stream: PlaybackController.Stream, playback: PlaybackController, onClose: @escaping () -> Void) {
         self.stream = stream
+        self.playback = playback
         self.onClose = onClose
         super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-    deinit { stopPlayerAsync() }
+    deinit { NSLog("[STREMIOAPP] player VC deinit"); stopPlayerAsync() }
 
     private static func symbol(_ name: String, size: CGFloat = 22) -> UIImage? {
         UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(pointSize: size))
@@ -321,10 +340,44 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
 
     @objc private func showSubtitleMenu() {
         guard let player else { return }
-        let tracks = trackList(indexes: player.videoSubTitlesIndexes, names: player.videoSubTitlesNames)
-        presentTrackSheet(title: "Subtitles", tracks: tracks, current: player.currentVideoSubTitleIndex, from: subsButton) {
-            player.currentVideoSubTitleIndex = $0
+        let embedded = trackList(indexes: player.videoSubTitlesIndexes, names: player.videoSubTitlesNames)
+        let online = playback.externalSubtitles
+        let sheet = UIAlertController(title: "Subtitles",
+                                      message: (embedded.count <= 1 && online.isEmpty) ? "No subtitles for this stream" : nil,
+                                      preferredStyle: .actionSheet)
+        // Embedded tracks (VLC lists "Disable" first with index -1).
+        for (index, name) in embedded {
+            let active = selectedExternalSubtitle == nil && index == player.currentVideoSubTitleIndex
+            let label = index == -1 ? "Off" : name
+            sheet.addAction(UIAlertAction(title: (active ? "\u{2713} " : "") + label, style: .default) { _ in
+                self.selectedExternalSubtitle = nil
+                player.currentVideoSubTitleIndex = index
+                self.scheduleControlsHide()
+            })
         }
+        // Online tracks from Stremio's subtitle addons, one per language.
+        var seenLang = Set<String>()
+        for sub in online where seenLang.insert(sub.lang.lowercased()).inserted {
+            let active = selectedExternalSubtitle == sub.url
+            sheet.addAction(UIAlertAction(title: (active ? "\u{2713} " : "") + Self.languageName(sub.lang) + " (online)", style: .default) { _ in
+                // VLC fetches the file itself; enforce=true makes it the active track.
+                player.addPlaybackSlave(sub.url, type: .subtitle, enforce: true)
+                self.selectedExternalSubtitle = sub.url
+                self.flashToast(Self.languageName(sub.lang))
+                self.scheduleControlsHide()
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let pop = sheet.popoverPresentationController { pop.sourceView = subsButton; pop.sourceRect = subsButton.bounds }
+        present(sheet, animated: true)
+        controlsTimer?.invalidate()
+    }
+
+    private static func languageName(_ code: String) -> String {
+        let c = code.trimmingCharacters(in: .whitespaces)
+        if c.isEmpty { return "Unknown" }
+        if c.count <= 3, let name = Locale.current.localizedString(forLanguageCode: c.lowercased()) { return name.capitalized }
+        return c.capitalized
     }
 
     private func presentTrackSheet(title: String, tracks: [(Int32, String)], current: Int32,
@@ -524,6 +577,17 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
             NSLog("[STREMIOAPP] first frame at %@", player.time.stringValue)
             stopStatsPolling()
             scheduleControlsHide()
+            #if VLC_SELFTEST
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                guard let self, let player = self.player else { return }
+                let subs = self.trackList(indexes: player.videoSubTitlesIndexes, names: player.videoSubTitlesNames)
+                if let t = subs.first(where: { $0.0 != -1 }) {
+                    player.currentVideoSubTitleIndex = t.0
+                    player.position = 0.08
+                    NSLog("[STREMIOAPP] selftest picked subtitle %d '%@' of %d", t.0, t.1, subs.count)
+                }
+            }
+            #endif
         }
         guard !isScrubbing else { return }
         slider.value = player.position

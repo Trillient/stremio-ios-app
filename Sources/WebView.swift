@@ -74,6 +74,21 @@ private let interceptScript = """
     } catch (e) {}
   }
 
+  // Stremio's subtitle addons answer .../subtitles/<type>/<id>...json with
+  // { subtitles: [{ lang, url }] }. The web player would use them; VLC can't
+  // see them, so relay the list to native and load them as playback slaves.
+  function isSubs(u) { return typeof u === 'string' && u.indexOf('/subtitles/') !== -1; }
+  function postSubs(json) {
+    try {
+      var list = (json && json.subtitles) || [], items = [];
+      for (var i = 0; i < list.length; i++) {
+        var t = list[i]; if (!t || !t.url) continue;
+        items.push({ lang: t.lang || t.language || '', url: t.url });
+      }
+      if (items.length) window.webkit.messageHandlers.vlc.postMessage(JSON.stringify({ kind: 'subtitles', items: items }));
+    } catch (e) {}
+  }
+
   function isHls(u) {
     return typeof u === 'string' && u.indexOf('/hlsv2/') !== -1 && u.indexOf('.m3u8') !== -1;
   }
@@ -114,6 +129,12 @@ private let interceptScript = """
     window.fetch = function (input, init) {
       var u = (typeof input === 'string') ? input : (input && input.url);
       if (isHls(u)) { grab(u); return Promise.reject(new DOMException('handled by native player', 'AbortError')); }
+      if (isSubs(u)) {
+        return origFetch.apply(this, arguments).then(function (r) {
+          try { r.clone().json().then(postSubs).catch(function () {}); } catch (e) {}
+          return r;
+        });
+      }
       return origFetch.apply(this, arguments);
     };
   }
@@ -122,11 +143,14 @@ private let interceptScript = """
   var origOpen = XMLHttpRequest.prototype.open;
   var origSend = XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.open = function (method, url) {
-    this.__hls = isHls(url); this.__url = url;
+    this.__hls = isHls(url); this.__subs = isSubs(url); this.__url = url;
     return origOpen.apply(this, arguments);
   };
   XMLHttpRequest.prototype.send = function () {
     if (this.__hls) { grab(this.__url); return; }
+    if (this.__subs) {
+      this.addEventListener('load', function () { try { postSubs(JSON.parse(this.responseText)); } catch (e) {} });
+    }
     return origSend.apply(this, arguments);
   };
 
@@ -211,9 +235,17 @@ struct WebView: UIViewRepresentable {
             guard message.name == "vlc",
                   let body = message.body as? String,
                   let data = body.data(using: .utf8),
-                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let urlString = obj["url"] as? String,
-                  let url = URL(string: urlString) else { return }
+                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+            if (obj["kind"] as? String) == "subtitles" {
+                let items = (obj["items"] as? [[String: Any]] ?? []).compactMap { d -> PlaybackController.ExternalSubtitle? in
+                    guard let u = d["url"] as? String, let url = URL(string: u) else { return nil }
+                    return PlaybackController.ExternalSubtitle(lang: d["lang"] as? String ?? "", url: url)
+                }
+                NSLog("[STREMIOAPP] subtitle addon offered %d tracks", items.count)
+                model.playback.addExternalSubtitles(items)
+                return
+            }
+            guard let urlString = obj["url"] as? String, let url = URL(string: urlString) else { return }
             NSLog("[STREMIOAPP] intercepted=%@", urlString)
             let title = (obj["title"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "Stream"
             model.playWithCookies(url: url, title: title)

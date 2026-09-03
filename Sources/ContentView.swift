@@ -2,10 +2,17 @@ import SwiftUI
 
 struct ContentView: View {
     @AppStorage(AppSettings.onboardedKey) private var onboarded = false
+    private static var isSelfTest: Bool {
+        #if VLC_SELFTEST
+        return true
+        #else
+        return false
+        #endif
+    }
 
     var body: some View {
         Group {
-            if onboarded { StremioHostView() } else { OnboardingView { onboarded = true } }
+            if onboarded || Self.isSelfTest { StremioHostView() } else { OnboardingView { onboarded = true } }
         }
         .onAppear {
             AppSettings.consumeResetIfRequested()
@@ -20,6 +27,7 @@ struct StremioHostView: View {
     @StateObject private var model: WebViewModel
 
     init() {
+        NSLog("[STREMIOAPP] StremioHostView init (new PlaybackController)")
         let playback = PlaybackController()
         _playback = StateObject(wrappedValue: playback)
         _model = StateObject(wrappedValue: WebViewModel(
@@ -60,7 +68,7 @@ struct StremioHostView: View {
         }
         #endif
         .fullScreenCover(item: $playback.stream) { stream in
-            VLCPlayerContainer(stream: stream) { playback.stop() }
+            VLCPlayerContainer(stream: stream, playback: playback) { playback.stop() }
                 .ignoresSafeArea()
                 .background(Color.black)
         }
