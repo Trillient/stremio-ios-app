@@ -729,7 +729,12 @@ final class VLCPlayerViewController: UIViewController, VLCMediaPlayerDelegate, U
         switch player.state {
         case .opening: if !hasRenderedFrame { spinner.startAnimating() }
         case .error:
-            showError("This torrent has too few sources right now, or it\u{2019}s still finding them. Give it a moment and try again, or pick a stream with more seeders.")
+            // Remember the spot before tearing the player down, so "Try again"
+            // picks up where the viewer was instead of restarting the film.
+            if player.position > 0.001 { pendingPosition = player.position }
+            showError(hasRenderedFrame
+                      ? "Playback stopped. The stream may have run out of sources, or the connection to the server dropped. Try again picks up where you left off."
+                      : "This torrent has too few sources right now, or it\u{2019}s still finding them. Give it a moment and try again, or pick a stream with more seeders.")
         case .ended, .stopped: spinner.stopAnimating()
         default: break
         }

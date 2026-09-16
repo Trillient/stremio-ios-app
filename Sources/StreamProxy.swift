@@ -174,6 +174,14 @@ final class StreamProxy {
 /// (which gives up after 3 tries), hold the client connection and keep re-asking
 /// the origin until it produces data. Simple backpressure suspends the origin
 /// task when the client falls behind.
+///
+/// Mid-stream breaks get the same treatment. A two-hour film is one long origin
+/// response, and anything that interrupts it — the torrent starving for more
+/// than the 90 s request timeout, a dropped tunnel, a restarted server — used to
+/// end the client connection, which VLC reported as a playback error well into
+/// the film and which lost the viewer's position. Once the head is written the
+/// body is instead continued with `Range: bytes=<delivered>-` on a fresh leg, so
+/// the break never reaches VLC.
 private final class Relay: NSObject, URLSessionDataDelegate {
     private let conn: NWConnection
     private let request: URLRequest
@@ -190,12 +198,44 @@ private final class Relay: NSObject, URLSessionDataDelegate {
     var onContentType: ((String) -> Void)?
     private let retryDelay: TimeInterval = 3
 
+    /// Byte offset the client asked us to start at (0 unless VLC sent a Range).
+    private let rangeStart: Int64
+    /// Body bytes handed to the client so far, across all legs.
+    private var delivered: Int64 = 0
+    /// Body bytes the client is expecting in total, when the origin told us.
+    private var expectedBody: Int64?
+    /// Resumes since data last flowed; reset on every byte received.
+    private var resumeAttempts = 0
+    /// Set once the client connection is gone, to stop resuming into nothing.
+    private var clientGone = false
+    private var finished = false
+    private let maxResumeAttempts = 60
+    private let resumeDelay: TimeInterval = 2
+
     init(conn: NWConnection, request: URLRequest, followRedirects: Bool, maxAttempts: Int) {
         self.conn = conn
         self.request = request
         self.followRedirects = followRedirects
         self.maxAttempts = maxAttempts
+        self.rangeStart = Relay.parseRangeStart(request.value(forHTTPHeaderField: "Range"))
         super.init()
+    }
+
+    /// First byte offset of a `bytes=N-...` request header.
+    private static func parseRangeStart(_ header: String?) -> Int64 {
+        guard let header, let eq = header.firstIndex(of: "=") else { return 0 }
+        let spec = header[header.index(after: eq)...]
+        return Int64(spec.prefix(while: { $0.isNumber })) ?? 0
+    }
+
+    /// The origin request for the current leg: the original one, or a Range
+    /// request continuing from where the previous leg stopped.
+    private func currentRequest() -> URLRequest {
+        lock.lock(); let sent = delivered; lock.unlock()
+        guard sent > 0 else { return request }
+        var r = request
+        r.setValue("bytes=\(rangeStart + sent)-", forHTTPHeaderField: "Range")
+        return r
     }
 
     func start() {
@@ -206,7 +246,7 @@ private final class Relay: NSObject, URLSessionDataDelegate {
         config.timeoutIntervalForRequest = 90
         config.timeoutIntervalForResource = 24 * 3600
         let session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
-        task = session.dataTask(with: request)
+        task = session.dataTask(with: currentRequest())
         task?.resume()
     }
 
@@ -225,6 +265,47 @@ private final class Relay: NSObject, URLSessionDataDelegate {
         conn.send(content: Data(head.utf8), completion: .contentProcessed { [conn] _ in conn.cancel() })
     }
 
+    /// The origin died part-way through a file VLC is still reading. The client
+    /// has already had a 200/206 head, so we cannot report an error to it — VLC
+    /// would surface a truncated stream as a playback failure and the viewer
+    /// would lose their place. Instead, re-ask the origin from the next byte we
+    /// owe and keep writing into the same client connection. A torrent stalling
+    /// for longer than the 90 s request timeout, a dropped tunnel or a restarted
+    /// server all end up here and recover without VLC noticing.
+    private func scheduleResume(reason: String) {
+        lock.lock()
+        resumeAttempts += 1
+        let attempt = resumeAttempts
+        let gone = clientGone
+        let offset = rangeStart + delivered
+        lock.unlock()
+
+        guard !gone, attempt <= maxResumeAttempts else {
+            NSLog("[STREMIOAPP][proxy] resume exhausted after %d tries (%@)", attempt, reason)
+            finish()
+            return
+        }
+        NSLog("[STREMIOAPP][proxy] mid-stream break at %lld (%@) — resuming %d/%d in %.0fs",
+              offset, reason, attempt, maxResumeAttempts, resumeDelay)
+        retrying = true
+        DispatchQueue.global().asyncAfter(deadline: .now() + resumeDelay) { [weak self] in
+            guard let self else { return }
+            self.retrying = false
+            self.start()
+        }
+    }
+
+    /// Closes the client connection once, after the body is complete or
+    /// unrecoverable.
+    private func finish() {
+        lock.lock()
+        if finished { lock.unlock(); return }
+        finished = true
+        lock.unlock()
+        conn.send(content: nil, contentContext: .finalMessage, isComplete: true,
+                  completion: .contentProcessed { [conn] _ in conn.cancel() })
+    }
+
     func urlSession(_ session: URLSession, task: URLSessionTask,
                     willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest,
                     completionHandler: @escaping (URLRequest?) -> Void) {
@@ -236,6 +317,29 @@ private final class Relay: NSObject, URLSessionDataDelegate {
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
                     completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         guard let http = response as? HTTPURLResponse else { completionHandler(.cancel); return }
+
+        // Any response arriving after the head was written belongs to a resumed
+        // leg: the client is mid-body and must receive only the missing bytes.
+        // This has to be decided before the 502 handling below, because writing a
+        // second set of headers into the middle of the body would corrupt it.
+        // Only a 206 continues the file; a 200 would restart it from byte zero
+        // and a redirect means the login bounced, so both are retried instead.
+        if headWritten {
+            guard http.statusCode == 206 else {
+                completionHandler(.cancel)
+                if http.statusCode == 416 || delivered == expectedBody {
+                    NSLog("[STREMIOAPP][proxy] origin reports range past EOF — body already complete")
+                    finish()
+                } else {
+                    scheduleResume(reason: "resume got HTTP \(http.statusCode), wanted 206")
+                }
+                return
+            }
+            NSLog("[STREMIOAPP][proxy] resumed at %lld (%@)", rangeStart + delivered,
+                  http.value(forHTTPHeaderField: "Content-Range") ?? "-")
+            completionHandler(.allow)
+            return
+        }
 
         if (502...504).contains(http.statusCode) && attempts < maxAttempts {
             completionHandler(.cancel)
@@ -265,6 +369,12 @@ private final class Relay: NSObject, URLSessionDataDelegate {
                   http.value(forHTTPHeaderField: "Content-Length") ?? "-", attempts)
         }
         headWritten = true
+        // Body bytes this response promised, so a silent truncation can be told
+        // apart from a genuine end of file. For a 206 this is the length of the
+        // range, which is exactly what the client is owed.
+        if !encoded && http.expectedContentLength > 0 {
+            expectedBody = http.expectedContentLength
+        }
         if let ct = http.value(forHTTPHeaderField: "Content-Type") { onContentType?(ct) }
         conn.send(content: Data(head.utf8), completion: .contentProcessed { _ in })
         completionHandler(.allow)
@@ -273,11 +383,18 @@ private final class Relay: NSObject, URLSessionDataDelegate {
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         lock.lock()
         inflight += data.count
+        // Bytes are counted as owed the moment they are queued, so a resume
+        // after a failed send cannot ask the origin for them twice.
+        delivered += Int64(data.count)
+        resumeAttempts = 0                     // real progress: spend the budget again if needed
         if inflight > 8_000_000 && !suspended { suspended = true; dataTask.suspend() }
         lock.unlock()
         conn.send(content: data, completion: .contentProcessed { [weak self] error in
             guard let self else { return }
-            if error != nil { dataTask.cancel(); self.conn.cancel(); return }
+            if error != nil {
+                self.lock.lock(); self.clientGone = true; self.lock.unlock()
+                dataTask.cancel(); self.conn.cancel(); return
+            }
             self.lock.lock()
             self.inflight -= data.count
             if self.suspended && self.inflight < 2_000_000 { self.suspended = false; dataTask.resume() }
@@ -293,7 +410,23 @@ private final class Relay: NSObject, URLSessionDataDelegate {
             fail(502, error == nil ? "Stream did not start" : "Upstream error")
             return
         }
-        conn.send(content: nil, contentContext: .finalMessage, isComplete: true,
-                  completion: .contentProcessed { [conn] _ in conn.cancel() })
+        lock.lock()
+        let gone = clientGone
+        let sent = delivered
+        lock.unlock()
+        if gone { finish(); return }
+
+        // A clean EOF short of the promised length is a truncation, not an end
+        // of file, so it is resumed like an explicit error.
+        if let expected = expectedBody, sent < expected {
+            scheduleResume(reason: error?.localizedDescription
+                           ?? "origin closed at \(sent)/\(expected) bytes")
+            return
+        }
+        if expectedBody == nil, let error {
+            scheduleResume(reason: error.localizedDescription)
+            return
+        }
+        finish()
     }
 }
