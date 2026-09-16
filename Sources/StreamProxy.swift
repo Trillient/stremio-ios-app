@@ -78,26 +78,56 @@ final class StreamProxy {
         return URL(string: "http://\(ip):\(port)/\(token)\(hls ? "/master.m3u8" : "")")
     }
 
+    /// Where the last successful listen happened, so the next launch can reuse it.
+    private static let portDefaultsKey = "dev.woolston.stremio.proxyPort"
+    /// First choice of port. 11470 belongs to the in-app streaming server.
+    private static let preferredPort: UInt16 = 11471
+
     private func startIfNeeded() {
         guard listener == nil else { return }
+        // In built-in mode the web app is served from http://127.0.0.1:<port>, and
+        // a web origin includes its port. Listening on a fresh ephemeral port each
+        // launch therefore pointed Stremio at a different origin every time, so it
+        // found an empty localStorage and presented itself as logged out. Keep the
+        // port stable across launches, remembering whichever one actually worked.
+        let saved = UserDefaults.standard.integer(forKey: Self.portDefaultsKey)
+        let preferred = (saved > 0 && saved <= 65535) ? UInt16(saved) : Self.preferredPort
+        if listen(on: preferred) { return }
+        NSLog("[STREMIOAPP][proxy] port %d unavailable — using an ephemeral port; the built-in web app starts a fresh session this launch",
+              Int(preferred))
+        _ = listen(on: nil)
+    }
+
+    /// Binds the listener, to `desired` when given and to any free port otherwise.
+    private func listen(on desired: UInt16?) -> Bool {
         let params = NWParameters.tcp
-        params.requiredLocalEndpoint = NWEndpoint.hostPort(host: "0.0.0.0", port: .any)
+        let wanted = desired.flatMap { NWEndpoint.Port(rawValue: $0) } ?? .any
+        params.requiredLocalEndpoint = NWEndpoint.hostPort(host: "0.0.0.0", port: wanted)
         guard let l = try? NWListener(using: params) else {
-            NSLog("[STREMIOAPP][proxy] failed to create listener"); return
+            NSLog("[STREMIOAPP][proxy] failed to create listener"); return false
         }
         let ready = DispatchSemaphore(value: 0)
-        l.stateUpdateHandler = { [weak self] state in
+        l.stateUpdateHandler = { state in
             switch state {
-            case .ready: self?.port = l.port?.rawValue ?? 0; ready.signal()
+            case .ready: ready.signal()
             case .failed(let err): NSLog("[STREMIOAPP][proxy] listener failed: %@", err.localizedDescription); ready.signal()
+            case .cancelled: ready.signal()
             default: break
             }
         }
         l.newConnectionHandler = { [weak self] conn in self?.accept(conn) }
-        listener = l
         l.start(queue: queue)
         _ = ready.wait(timeout: .now() + 3)
-        NSLog("[STREMIOAPP][proxy] listening on 127.0.0.1:%d", Int(port))
+
+        guard case .ready = l.state, let bound = l.port?.rawValue else {
+            l.cancel()
+            return false
+        }
+        listener = l
+        port = bound
+        UserDefaults.standard.set(Int(bound), forKey: Self.portDefaultsKey)
+        NSLog("[STREMIOAPP][proxy] listening on 127.0.0.1:%d", Int(bound))
+        return true
     }
 
     private func accept(_ conn: NWConnection) {
