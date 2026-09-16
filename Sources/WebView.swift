@@ -51,7 +51,8 @@ final class WebViewModel: ObservableObject {
         }
     }
 
-    private static func cookie(_ cookie: HTTPCookie, matchesHost host: String) -> Bool {
+    // fileprivate so the initial-load cookie check in WebView can reuse it.
+    fileprivate static func cookie(_ cookie: HTTPCookie, matchesHost host: String) -> Bool {
         let domain = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
         return host == domain || host.hasSuffix("." + domain)
     }
@@ -240,7 +241,31 @@ struct WebView: UIViewRepresentable {
         webView.scrollView.backgroundColor = webView.backgroundColor
 
         model.webView = webView
-        webView.load(URLRequest(url: model.url))
+        // .default() hydrates its cookie store from disk asynchronously, and the
+        // network process only sees the SSO cookie once that finishes. Navigating
+        // straight away races it: when the load wins, the first request carries no
+        // cookie, the gateway bounces to the login page, and the app looks logged
+        // out even though the session is still valid — intermittently, because a
+        // cold start is slower to hydrate than a warm one. Touching the store
+        // forces it to load and hands us a completion that runs on the main queue
+        // once the cookies are live, so the first navigation always carries them.
+        let request = URLRequest(url: model.url)
+        var navigated = false
+        let navigate: (String) -> Void = { [weak webView] why in
+            guard !navigated, let webView else { return }
+            navigated = true
+            webView.load(request)
+            NSLog("[STREMIOAPP] initial load (%@) %@", why, model.url.absoluteString)
+        }
+        config.websiteDataStore.httpCookieStore.getAllCookies { cookies in
+            let host = model.url.host ?? ""
+            let matched = cookies.filter { WebViewModel.cookie($0, matchesHost: host) }
+            NSLog("[STREMIOAPP] cookie store ready: %d total, %d for %@",
+                  cookies.count, matched.count, host)
+            navigate("cookies ready")
+        }
+        // Safety net: never leave a blank screen if that callback is not delivered.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { navigate("timeout") }
         return webView
     }
 
